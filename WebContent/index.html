@@ -28,8 +28,10 @@
 		<script src="js/cola.js"></script>
 		<script src="https://cdn.rawgit.com/cytoscape/cytoscape.js-spread/1.0.9/cytoscape-spread.js"></script>
 		<script src="http://marvl.infotech.monash.edu/webcola/cola.v3.min.js"></script>
-    		<script src="https://cdn.rawgit.com/cytoscape/cytoscape.js-cola/1.1.1/cytoscape-cola.js"></script>
-    		<script src="https://cdn.rawgit.com/cytoscape/cytoscape.js-cose-bilkent/1.0.5/cytoscape-cose-bilkent.js"></script>
+    	<script src="https://cdn.rawgit.com/cytoscape/cytoscape.js-cola/1.1.1/cytoscape-cola.js"></script>
+    	<script src="https://cdn.rawgit.com/cytoscape/cytoscape.js-cose-bilkent/1.0.5/cytoscape-cose-bilkent.js"></script>
+    	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+		
 
 		<script type="text/javascript">
 		
@@ -480,13 +482,13 @@
 							"maxSmpStringLen" : 20,
 							"maxVarStringLen": 20,
 							"autoScaleFont" : false,
-							"varLabelFontSize" : 10,
-							"smpLabelFontSize" : 10,
-							"minTextSize" : 12,
+							"varLabelFontSize" : 12,
+							"smpLabelFontSize" : 12,
+							"minTextSize" : 15,
 							"title": "",
 							"disableMenu" : true,
 							"disableToolbar" : true,
-							"resizable" : true,
+							"resizable" : false,
 							"indicatorCenter" : "white",
 							"colorSpectrum": myColors
 							,
@@ -1186,6 +1188,10 @@
 				else {cy.edges().css({"width":"2"});edgeWidth = 2;}
 			}
 			
+			$(function () {
+				  $('[data-toggle="popover"]').popover()
+				})
+			
 		</script>
 	</head>
 	<body>
@@ -1375,8 +1381,8 @@
                             		<div class="result" id="cy"></div>
                         		</div>
                         	</div>
-                        	<div class="col-sm-12 result row" id="divSliders" style="padding-top: 15px;">
-                        		<div class="col-sm-12 row result" >
+                        	<div class="col-sm-12 result row" id="divSliders" style="padding-top: 15px;padding-right: 0px">
+                        		<div class="col-sm-12 box result" style="padding-left : 15px; width : 80%" >
 									<div class="col-sm-12 row result">
                     					<label class="result" for="amount" style="width: 180px">Min absolute correlation:</label>
                     					<input class="result" size="3" type="range" id="coefficientSlider" min="0.01" max="1" step="0.01" style="width: 150px; display: inline"/>
@@ -1387,13 +1393,25 @@
                     					<input class="result" size="3" type="range" id="pvalueSlider" min="0.001" max="0.05" step="0.001" style="width: 150px; display: inline"/>
                     					<input class="result" disabled=true size="3" type="text" id="pvalueText" style="border:0; margin-bottom:0; width: 50px" />   		
                 					</div>
+                					
                 				</div>
+                				<button type="button" class="btn btn-lg col-sm-2 row result" style="margin-top: 5px;" data-toggle="popover" data-placement="bottom" title="Network Legend" data-content="The legend details will show up here!">Legend</button>
+<!--                 				<input class="col-sm-2 row result popuptext" id="myPopup" type="button"  value="Legend" onclick="showLegend();" style="float:center;margin-top:12.5px;"/> -->
+<!--                 				<a href="#" data-toggle="popover" title="Popover Header" data-placement="left" data-content="Some content inside the popover">Legend</a> -->
+<!--                 					<a data-placement="bottom" data-toggle="popover" data-container="body" data-placement="left" type="button" data-html="true" href="#" id="login">Show Legend</a> -->
+<!--                 					    <div id="popover-content" class="hide"> -->
+<!-- 											<canvas id="canvas3" width="450" height="300"></canvas> -->
+<!-- 									    </div> -->
+<!--                 					<div class="popper-content hide">My second popover content goes here.</div> -->
+<!--                 					<div class="popper-content hide" id="divLegend"><canvas id="canvas3" width="450" height="300"></canvas></div>							 -->
                 			</div>  
                 			              			         
 						</div>	
 										
-						<div class="col-sm-6 result row" id="divGeneList" style="padding-left: 30px;">	
-							<label class="result">Gene set (click on a gene set name on heatmap or network to select)</label><br>
+					</div>
+				</div>	
+				<div class="row result" id="divGeneList" style="padding: 20px;padding-top: 15px; margin-top: 30px; border-top:2px solid #d3d3d3; margin-left:0px; margin-right:0px;">	
+							<label class="result" style="font-size:24px; margin-bottom: 15px;">Gene set (click on a gene set name on heatmap or network to select)</label><br>
 							<label class="result">Name</label><br>
 							<p class="result" id="selctedLeafName"> </p>
 							<label>External links</label><br>
@@ -1417,16 +1435,12 @@
 								</tfoot>
 							</table>
 							<p id="table2waiting" class="waitmessage">Please wait. Getting data ....</p>
-					    </div>					
-						<div class="col-sm-6 result row" id="divLegend">						
-							<canvas id="canvas3" width="450" height="300"></canvas>
-						</div>				
-					</div>
-				</div>				
-				<div class="row result" id="divTable1">
+			 	</div>					
+
+				<div class="row result" id="divTable1" style="border-top:2px solid #d3d3d3;">
 					<div class="col-sm-12 result">
 						<div class="col-sm-12 result">
-							<h3 class="result" >Network Data Table</h3>
+							<h3 class="result" style="font-weight: bold; margin-bottom: 15px" >Network Data Table</h3>
 							<div class="col-sm-12 result">
 								<table id="table1" class="display result" cellspacing="0" width="100%">
 									<thead class="result">
