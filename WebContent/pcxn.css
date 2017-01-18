@@ -57,19 +57,63 @@ body {
 }
 
 #canvas1{
-	border:solid gray 1px
-	position: absolute;
+/* 	border:1px solid #d3d3d3; */
+/* 	position: absolute; */
+	margin-top:1px;
+	margin-right:15px;
 /* 	height:100vh; */
 
 }
 
 
 #cy{
-	 border:solid gray 1px; 
-	 top:20px;
-	 left:30px;
-	 height:83vh;
+	 border:3px solid #e7e7e7; 
+	 border-radius: 5px;
+/* 	 top:20px; */
+/* 	 left:30px; */
+	 height:84vh;
+	 margin-top: 30px;
+	 border-top-right-radius: 0px;
+	 border-top-left-radius: 0px;
 	 
+}
+
+.black_overlay {
+  display: none;
+  position: absolute;
+  top: 0%;
+  left: 0%;
+  width: 100%;
+  height: 100%;
+  background-color: black;
+  z-index: 1001;
+  -moz-opacity: 0.8;
+  opacity: .80;
+  filter: alpha(opacity=80);
+}
+.white_content {
+  display: none;
+  position: absolute;
+  top: 25%;
+  left: 25%;
+  width: 50%;
+  height: 50%;
+  padding: 16px;
+  border: 16px solid orange;
+  background-color: white;
+  z-index: 1002;
+  overflow: auto;
+}
+
+/* Add animation (fade in the popup) */
+@-webkit-keyframes fadeIn {
+    from {opacity: 0;} 
+    to {opacity: 1;}
+}
+
+@keyframes fadeIn {
+    from {opacity: 0;}
+    to {opacity:1 ;}
 }
 
 #textfieldGeneSet, 
@@ -185,81 +229,116 @@ input[type="range"]::-ms-tooltip {
  .selected {
       border: 1px solid #0000ff;
   }
-  
-/* New Heatmap things */
 
-/* disable text selection */
-svg *::selection {
-   background : transparent;
-}
-
-svg *::-moz-selection {
-   background:transparent;
-} 
-
-svg *::-webkit-selection {
-   background:transparent;
-}
-rect.selection {
-  stroke          : #333;
-  stroke-dasharray: 4px;
-  stroke-opacity  : 0.5;
-  fill            : transparent;
+.cybtnShape {
+  -webkit-border-radius: 28;
+  -moz-border-radius: 28;
+  border-radius: 28px;
+  color: #ffffff;
+  font-size: 14px;
+  background: #348fd9;
+  padding: 4px 14px 4px 14px;
+  text-decoration: none;
 }
 
-rect.cell-border {
-  stroke: #eee;
-  stroke-width:0.3px;   
+.cybtnShape:hover {
+  background: #3cb0fd;
+  background-image: -webkit-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -moz-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -ms-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -o-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: linear-gradient(to bottom, #3cb0fd, #3498db);
+  text-decoration: none;
 }
 
-rect.cell-selected {
-  stroke: rgb(51,102,153);
-  stroke-width:0.5px;   
+.cybtnView {
+  -webkit-border-radius: 28;
+  -moz-border-radius: 28;
+  border-radius: 28px;
+  color: #ffffff;
+  font-size: 14px;
+  background: #a200a2;
+  padding: 4px 14px 4px 14px;
+  text-decoration: none;
 }
 
-rect.cell-hover {
-  stroke: #F00;
-  stroke-width:0.3px;   
+.cybtnView:hover {
+  background: #3cb0fd;
+  background-image: -webkit-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -moz-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -ms-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -o-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: linear-gradient(to bottom, #3cb0fd, #3498db);
+  text-decoration: none;
 }
 
-text.mono {
-  font-size: 9pt;
-  font-family: Consolas, courier;
-  fill: #aaa;
+.cybtnSave {
+  -webkit-border-radius: 28;
+  -moz-border-radius: 28;
+  border-radius: 28px;
+  color: #ffffff;
+  font-size: 14px;
+  background: #008080;
+  padding: 4px 14px 4px 14px;
+  text-decoration: none;
 }
 
-text.text-selected {
-  fill: #000;
+.cybtnSave:hover {
+  background: #3cb0fd;
+  background-image: -webkit-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -moz-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -ms-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -o-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: linear-gradient(to bottom, #3cb0fd, #3498db);
+  text-decoration: none;
 }
 
-text.text-highlight {
-  fill: #c00;
-}
-text.text-hover {
-  fill: #00C;
-}
-#tooltip {
-  position: absolute;
-  padding: 10px;
-  background-color: white;
-  -webkit-border-radius: 10px;
-  -moz-border-radius: 10px;
-  border-radius: 10px;
-  -webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
-  -moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
-  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
-  pointer-events: none;
+ /* Dropdown Button */
+.dropbtn {
+    background-color: #4CAF50;
+    color: white;
+    padding: 16px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
 }
 
-#tooltip.hidden {
-  display: none;
+/* Dropdown button on hover & focus */
+.dropbtn:hover, .dropbtn:focus {
+    background-color: #3e8e41;
 }
 
-#tooltip p {
-  margin: 0;
-  font-family: sans-serif;
-  font-size: 12px;
-  line-height: 20px;
+/* The container <div> - needed to position the dropdown content */
+.dropdown {
+    position: relative;
+    display: inline-block;
 }
-    
+
+/* Dropdown Content (Hidden by Default) */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+}
+
+/* Links inside the dropdown */
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+/* Change color of dropdown links on hover */
+.dropdown-content a:hover {background-color: #f1f1f1}
+
+/* Show the dropdown menu (use JS to add this class to the .dropdown-content container when the user clicks on the dropdown button) */
+.show {display:block;}
+
+
+
+
+
 
