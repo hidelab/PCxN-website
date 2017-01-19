@@ -1435,7 +1435,7 @@
 						<button
 							class="button-tiny button button-rounded button-raised button-small-caps"
 							type="button" id="buttonpng1" onclick="saveHeatmapAsPNG();"
-							style="padding-right: 14px; padding-left: 14px;position: absolute; z-index: 99999999;" />
+							style="padding-right: 11px; padding-left: 11px;position: absolute; z-index: 99999999;font-size:14px;" />
 						PNG
 						</button>
 						<!-- This div gets replaced by sizeCanvas() -->
@@ -1453,37 +1453,35 @@
 
 
 						<div class="col-sm-12 row result box"
-							style="padding-left: 30px; padding-top: 5px;">
+							style="padding-left: 15px; padding-top: 5px;">
 							<div class="result row" style="position: relative">
 								<div class="button-group" style="position: absolute; z-index: 99999999; width:100%; background-color: #e7e7e7;padding-top: 3.5px; padding-bottom: 2.5px;border-radius:5px; border-bottom-right-radius: 0px;border-bottom-left-radius: 0px;">
 <!-- 									<label style=" padding-left: 24px; float:left; padding-top: 2.5px;color: #575757;" />Tools</label> -->
-									<div id="miscButtonGroup" class="btn-group" style="float:right; margin-right: 5px;">
-										<button class="button-tiny button button-rounded button-raised button-small-caps" type="button" onclick="centerLayout();" style="padding-right: 14px;padding-left: 14px;"/>Center Graph</button>
-										<button class="button-tiny button button-rounded button-raised button-small-caps" type="button" onclick="edgewidth();" style="padding-right: 14px;padding-left: 14px;"/>Edges</button>
+									<div id="miscButtonGroup" class="btn-group" style="float:right; margin-right: 5px; font-size:14px;">
+										<button class="button-tiny button button-rounded button-raised button-small-caps" type="button" onclick="centerLayout();" style="padding-right: 11px;padding-left: 14px;"/>Center Graph</button>
+										<button class="button-tiny button button-rounded button-raised button-small-caps" type="button" onclick="edgewidth();" style="padding-right: 11px;padding-left: 14px;"/>Edges</button>
 									</div>
-									<div id="layoutButtonGroup" class="btn-group" style="float:right; margin-right: 5px;">
-										<button class="button-tiny button button-rounded button-raised button-small-caps" type="button"  onclick="spreadLayout();" style="padding-right: 14px;padding-left: 14px;"/>Spread</button>
-										<button class="button-tiny button button-rounded button-raised button-small-caps" type="button"  onclick="gridLayout();" style="padding-right: 14px;padding-left: 14px;"/>Grid</button>
-										<button class="button-tiny button button-rounded button-raised button-small-caps" type="button"  onclick="circleLayout();" style="padding-right: 14px;padding-left: 14px;"/>Circle</button>
-										<button class="button-tiny button button-rounded button-raised button-small-caps" type="button"  onclick="colaLayout();" style="padding-right: 14px;padding-left: 14px;"/>Physics</button>
-										<button class="button-tiny button button-rounded button-raised button-small-caps" type="button"  onclick="concentricLayout();" style="padding-right: 14px;padding-left: 14px;"/>Concentric</button>
+									<div id="layoutButtonGroup" class="btn-group" style="float:right; margin-right: 5px;font-size:14px;">
+										<button class="button-tiny button button-rounded button-raised button-small-caps" type="button"  onclick="spreadLayout();" style="padding-right: 11px;padding-left: 11px;"/>Spread</button>
+										<button class="button-tiny button button-rounded button-raised button-small-caps" type="button"  onclick="gridLayout();" style="padding-right: 11px;padding-left: 11px;"/>Grid</button>
+										<button class="button-tiny button button-rounded button-raised button-small-caps" type="button"  onclick="circleLayout();" style="padding-right: 11px;padding-left: 11px;"/>Circle</button>
+										<button class="button-tiny button button-rounded button-raised button-small-caps" type="button"  onclick="colaLayout();" style="padding-right: 11px;padding-left: 11px;"/>Physics</button>
+										<button class="button-tiny button button-rounded button-raised button-small-caps" type="button"  onclick="concentricLayout();" style="padding-right: 11px;padding-left: 11px;"/>Concentric</button>
 									</div>
-									<div id="saveButtonGroup" class="btn-group" style="float:left; margin-left: 5px; margin-left: 5px;">
-										<button class="button-tiny button button-rounded button-raised button-small-caps" type="button" id="buttonjpg" onclick="saveNetworkAsJPG();" style="padding-right: 14px; padding-left: 14px;" />JPG</button>
-										<button class="button-tiny button button-rounded button-raised button-small-caps" type="button" id="buttonjson" onclick="saveNetworkAsJSON();" style="padding-right: 14px; padding-left: 14px;" />JSON</button>
+									<div id="saveButtonGroup" class="btn-group" style="float:left; margin-left: 5px; margin-left: 5px;font-size:14px;">
+										<button class="button-tiny button button-rounded button-raised button-small-caps" type="button" id="buttonjpg" onclick="saveNetworkAsJPG();" style="padding-right: 11px; padding-left: 11px;" />JPG</button>
+										<button class="button-tiny button button-rounded button-raised button-small-caps" type="button" id="buttonjson" onclick="saveNetworkAsJSON();" style="padding-right: 11px; padding-left: 11px;" />JSON</button>
 									</div>
 
 
 								</div>
 																
-																
-								
 								<div class="result" id="cy"></div>
 								<div id="divLegend" style="display:none;position:absolute;margin-top:32px;border-radius:5px;border-top-right-radius: 0px;border-top-left-radius: 0px;background:#f7f7f7;bottom: 0;right: 0;"><canvas id="canvas3" width="450" height="250"></canvas></div>
 							</div>
 						</div>
 						<div class="col-sm-12 result row" id="divSliders"
-							style="padding-top: 15px; padding-right: 0px">
+							style="padding-top: 13px;padding-bottom: 14px; padding-right: 0px; background-color: #e7e7e7;border-bottom-right-radius: 5px;border-bottom-left-radius: 5px; padding-left: 5px;">
 							<div class="col-sm-12 box result"
 								style="padding-left: 15px; width: 75%;">
 								<div class="col-sm-12 row result">
@@ -1493,7 +1491,7 @@
 										step="0.01" style="width: 150px; display: inline" /> <input
 										class="result" disabled=true size="3" type="text"
 										id="coefficientText"
-										style="border: 0; margin-bottom: 0; width: 50px" />
+										style="border: 0; margin-bottom: 0; width: 50px; background-color:#f6f6f6 " />
 								</div>
 								<div class="col-sm-12 row result">
 									<label class="result" for="pvalueSlider" style="width: 180px">Max
@@ -1502,13 +1500,13 @@
 										step="0.001" style="width: 150px; display: inline" /> <input
 										class="result" disabled=true size="3" type="text"
 										id="pvalueText"
-										style="border: 0; margin-bottom: 0; width: 50px" />
+										style="border: 0; margin-bottom: 0; width: 50px; background-color:#f6f6f6" />
 								</div>
 
 							</div>
 <!-- 							<button class="button button-raised button-primary button-pill button-small-caps col-sm-2 row result use" type="button" onclick="showLegend();" style="padding-right: 14px;padding-left: 14px;;position: absolute; z-index: 99999999; float:right;"/>Legend</button> -->
 							
-							<button type="button" class="btn btn-lg col-sm-3 row result user" onclick="showLegend();" style="margin-top: 7px;" >Legend</button>
+							<button type="button" class="btn btn-lg col-sm-3 row result user" onclick="showLegend();" style="background-color:#f6f6f6;margin-top: 9px;" >Legend</button>
 
 						</div>
 
