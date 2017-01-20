@@ -3,20 +3,16 @@
 <head>
 <title>PCxN</title>
 <meta charset="utf-8" />
-<meta property="og:url" content="http://pcxn.org:8080/index.html" />
-<meta property="og:type" content="website" />
-<meta property="og:title" content="PCxN The Pathway Co-Activity Map" />
-<meta property="og:description"
-	content="A database for correlation of pathways/gene sets" />
-<meta property="og:image"
-	content="http://pcxn.org:8080/pcxnscreenshot1.png" />
-<meta name="viewport"
-	content="user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, minimal-ui">
+<meta property="og:url"			content="http://pcxn.org:8080/index.html" />
+<meta property="og:type"		content="website" />
+<meta property="og:title"		content="PCxN The Pathway Co-Activity Map" />
+<meta property="og:description"	content="A database for correlation of pathways/gene sets" />
+<meta property="og:image"		content="http://pcxn.org:8080/pcxnscreenshot1.png" />
+<meta name="viewport"			content="user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, minimal-ui">
 
 <!-- Load all .js and .css required -->
 <script src="js/canvasXpress.min.js"></script>
-<link rel="stylesheet"
-	href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" />
+<link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" />
 <link rel="stylesheet" href="css/sbg.css" />
 <link rel="stylesheet" href="css/buttons.css" />
 <script type="text/javascript" src="js/sbg.js"></script>
@@ -25,24 +21,17 @@
 <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
 <script type="text/javascript" src="js/jquery.dataTables.min.js"></script>
 <link href="shared/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
-<link rel="stylesheet" type="text/css"
-	href="TableTools/css/dataTables.tableTools.css">
-<script type="text/javascript"
-	src="TableTools/js/dataTables.tableTools.js"></script>
+<link rel="stylesheet" type="text/css" href="TableTools/css/dataTables.tableTools.css">
+<script type="text/javascript" src="TableTools/js/dataTables.tableTools.js"></script>
 <link rel="stylesheet" type="text/css" href="pcxn.css">
 <script src="js/cytoscape.js"></script>
 <script src="js/FileSaver.js"></script>
 <script src="js/cola.js"></script>
-<script
-	src="https://cdn.rawgit.com/cytoscape/cytoscape.js-spread/1.0.9/cytoscape-spread.js"></script>
+<script	src="https://cdn.rawgit.com/cytoscape/cytoscape.js-spread/1.0.9/cytoscape-spread.js"></script>
 <script src="http://marvl.infotech.monash.edu/webcola/cola.v3.min.js"></script>
-<script
-	src="https://cdn.rawgit.com/cytoscape/cytoscape.js-cola/1.1.1/cytoscape-cola.js"></script>
-<script
-	src="https://cdn.rawgit.com/cytoscape/cytoscape.js-cose-bilkent/1.0.5/cytoscape-cose-bilkent.js"></script>
-<script
-	src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-
+<script	src="https://cdn.rawgit.com/cytoscape/cytoscape.js-cola/1.1.1/cytoscape-cola.js"></script>
+<script	src="https://cdn.rawgit.com/cytoscape/cytoscape.js-cose-bilkent/1.0.5/cytoscape-cose-bilkent.js"></script>
+<script	src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 
 <script type="text/javascript">
 		
@@ -50,11 +39,11 @@
 			var topNValue = 0;
 			var formResponse;
 			var geneSetsValue;
-			var	corrCutOffValue = 0.05;
-			var	geneSetCollectionValue;
+			var corrCutOffValue = 0.05;
+			var geneSetCollectionValue;
 			var upGenesetNames = [];
 			var downGenesetNames = [];
-			var form2geneset="";
+			var form2geneset = "";
 			var pathprintGeneSets = [];
 			var mSigDBC2CPGeneSets = [];
 			var mSigDBC5GeneSets = [];
@@ -70,7 +59,7 @@
 			var cxHeatmap = null;
 			var explore = true;
 			var activeLayout = 'circle';
-			var edgeWidth = 2;
+			var edgeWidth = 5;
 			
 			// Handler for Explore/Analyze decision
 			$(document).ready(function(){
@@ -200,7 +189,6 @@
                 if (tmp===null) {
                     tmp="true";
                 }
-//                 document.getElementById("checkboxNetworkLegend").checked = (tmp=="true");
                 
                 tmp = localStorage.getItem("checkboxGeneList");
                 if (tmp===null) {
@@ -397,11 +385,7 @@
 				}
 				
 				displayResults ();				
-				//$("#table2waiting").hide();
-				//alert(formResponse[0]);
-				//alert(formResponse[0][0]);
 				outputGenesetNames.sort();
-				//alert("The geneset names are:" + outputGenesetNames);
 				var correlationMatrix = [];
 				for(var i = 0; i < outputGenesetNames.length; ++i){
 					correlationMatrix[i] = [];
@@ -464,20 +448,15 @@
 				
                 sizeCanvas();
                 document.getElementById("coefficientSlider").max=maxCorrInResponseWithQuery;
-                //$(window).resize();
-				
-// 				   INPUT DATA
-//                 console.log(outputGenesetNames)
-//                 console.log(inputGeneSetNames)
-//                 console.log (correlationMatrix)
+
 // 				myColors = ['rgb(0,0,255)','rgb(7,7,255)','rgb(15,15,255)','rgb(23,23,255)','rgb(31,31,255)','rgb(39,39,255)','rgb(47,47,255)','rgb(55,55,255)','rgb(63,63,255)','rgb(71,71,255)','rgb(79,79,255)','rgb(87,87,255)','rgb(95,95,255)','rgb(103,103,255)','rgb(111,111,255)','rgb(119,119,255)','rgb(127,127,255)','rgb(135,135,255)','rgb(143,143,255)','rgb(151,151,255)','rgb(159,159,255)','rgb(167,167,255)','rgb(175,175,255)','rgb(183,183,255)','rgb(191,191,255)','rgb(199,199,255)','rgb(207,207,255)','rgb(215,215,255)','rgb(223,223,255)','rgb(231,231,255)','rgb(239,239,255)','rgb(247,247,255)',
 //                				 'rgb(255,255,255)','rgb(255,247,247)','rgb(255,239,239)','rgb(255,231,231)','rgb(255,223,223)','rgb(255,215,215)','rgb(255,207,207)','rgb(255,199,199)','rgb(255,191,191)','rgb(255,183,183)','rgb(255,175,175)','rgb(255,167,167)','rgb(255,159,159)','rgb(255,151,151)','rgb(255,143,143)','rgb(255,135,135)','rgb(255,127,127)','rgb(255,119,119)','rgb(255,111,111)','rgb(255,103,103)','rgb(255,95,95)','rgb(255,87,87)','rgb(255,79,79)','rgb(255,71,71)','rgb(255,63,63)','rgb(255,55,55)','rgb(255,47,47)','rgb(255,39,39)','rgb(255,31,31)','rgb(255,23,23)','rgb(255,15,15)','rgb(255,7,7)','rgb(255,0,0)'];
+				
 				myColors = ['#0000ff','#0707ff','#0f0fff','#1717ff','#1f1fff','#2727ff','#2f2fff','#3737ff','#3f3fff','#4747ff','#4f4fff','#5757ff','#5f5fff','#6767ff','#6f6fff','#7777ff','#7f7fff','#8787ff','#8f8fff','#9797ff','#9f9fff','#a7a7ff','#afafff','#b7b7ff','#bfbfff','#c7c7ff','#cfcfff','#d7d7ff','#dfdfff','#e7e7ff','#efefff','#f7f7ff','#ffffff','#fff7f7','#ffefef','#ffe7e7','#ffdfdf','#ffd7d7','#ffcfcf','#ffc7c7','#ffbfbf','#ffb7b7','#ffafaf','#ffa7a7','#ff9f9f','#ff9797','#ff8f8f','#ff8787','#ff7f7f','#ff7777','#ff6f6f','#ff6767','#ff5f5f','#ff5757','#ff4f4f','#ff4747','#ff3f3f','#ff3737','#ff2f2f','#ff2727','#ff1f1f','#ff1717','#ff0f0f','#ff0707','#ff0000'];
 				var cnv4=document.getElementById('canvas1');
 				var ctx4=cnv4.getContext('2d');
 				ctx4.clearRect(0, 0, canvas1.width, canvas1.height);
 				var clusterMethod = $("#selectClusterMethod").val();
-				//alert("Clustermethod: " + clusterMethod);				
 				cxHeatmap = new CanvasXpress('canvas1',
 					{
 						"z": { "gs" : outputGenesetNames},
@@ -589,8 +568,6 @@
 					}					
 				}
 				
-				//console.log(nodes);
-				//console.log(edges);
 				for(var i = 0; i < outputGenesetNames.length; ++i){
 					if (inNetwork.hasOwnProperty(outputGenesetNames[i])) {
                     	var newNode;
@@ -961,7 +938,6 @@
 			function sendForm2(){
                 saveSettings();               	
 				var form2genesetCollection = $('input:radio[name=form2geneset]:checked').val();
-                //var form2geneset="";
 
 				if(form2genesetCollection =="radioPathprint") {
 					form2geneset= $('#selectPathprint').val();
@@ -1201,7 +1177,8 @@
 			
 			function centerLayout() {cy.center();cy.fit(cy.nodes());} 
 			
-			function edgewidth() {				
+			function edgewidth() {
+				console.log(edgeWidth)
 				if (edgeWidth == 2) {cy.edges().css({"width":"5"});edgeWidth = 5;}
 				else {cy.edges().css({"width":"2"});edgeWidth = 2;}
 			}
@@ -1222,97 +1199,62 @@
 </head>
 <body>
 	<div class="container-fluid">
-		<div class="row" id="divHeader" style="margin-bottom: 10px;">
+		<div class="row" id="divHeader">
 			<div class="col-sm-12">
-				<div class="col-sm-8">
-					<h1>
-						<span style="font-size: 1em;"><a href="index.html"><img
-								src="journal125.png" width="10%" height="10%"
-								style="padding-right: 9px; vertical-align: bottom"></a>PCxN&nbsp</span><span
-							style="font-size: 0.8em;">The Pathway Co-Activity Map</span>
-					</h1>
+				<div class="col-sm-12" style="margin-top: 21.4333px;margin-bottom: 21.4333px;">
+					<h1><span style="font-size: 1em;"><a href="index.html"><img src="journal125.png" width="10%" height="10%" style="padding-right: 9px; vertical-align: bottom"></a>PCxN&nbsp</span><span style="font-size: 0.8em;">The Pathway Co-Activity Map</span></h1>
 				</div>
-				<div class="col-sm-4" id="menu" style="padding-top: 15px;">
+				<div class="col-sm-4" id="menu" style="text-align: right;">
 					<ul>
-						<li class="first"><a href="index.html"
-							accesskey="1" title="">Home</a></li>
+						<li class="first"><a href="index.html" accesskey="1" title="">Home</a></li>
 						<li><a href="news.html" accesskey="2" title="">News</a></li>
-						<li><a href="about.html" accesskey="3" title="">About</a></li>
-						<li><a href="contacts.html" accesskey="4" title="">Contacts</a></li>
+						<li><a href="about.html" accesskey="3" title="">About</a></li>						
+						<li><a href="contacts.html" accesskey="4" title="">Contacts</a></li>			
 					</ul>
 				</div>
 			</div>
 		</div>
 		<div class="row" id="divInput">
-			<div class="col-sm-6">
+			<div class="col-sm-5">
 				<form id="form2" name="form2" class="well">
-					<label for="inputTopN2">Find top</label> <input type="text"
-						id="inputTopN2" value="10" /><label> gene sets</label><br> <label>Correlated
-						with</label><br> <input type="radio" id="radioMSigDBH"
-						name="form2geneset" value="radioMSigDBH" checked>Select a
-					gene set from MSigDB H (Hallmark gene sets) <br> <select
-						id="selectMSigDBH" size="1">
-					</select><br> <input type="radio" id="radioMSigDBC2CP"
-						name="form2geneset" value="radioMSigDBC2CP" checked>Select
-					a gene set from MSigDB C2 CP (Canonical pathways) <br> <select
-						id="selectMSigDBC2CP" size="1">
-					</select><br> <input type="radio" id="radioMSigDBC5"
-						name="form2geneset" value="radioMSigDBC5">Select a gene
-					set from MSigDB C5 GO BP gene sets <br> <select
-						id="selectMSigDBC5" size="1">
-					</select><br> <input type="radio" id="radioPathprint"
-						name="form2geneset" value="radioPathprint">Select a gene
-					set from Pathprint <br> <select id="selectPathprint" size="1">
-					</select> <br> <input type="radio" id="radioSearchGeneSet"
-						name="form2geneset" value="radioSearchGeneSet">Search a
-					gene set <input id="textfieldGeneSet"
-						onkeypress="hideOptionsAndResults()"> <br> <label
-						id="label1" for="inputCorrelation2"> with absolute
-						correlation coefficient greater than</label><br> <input type="text"
-						id="inputCorrelation2" value="0.05" /><br> <label id="label2"
-						for="inputpValue2">and p-value less than</label><br> <input
-						type="text" id="inputpValue2" value="0.05" /><br>
-					<br> <input type="reset" id="button4" value=" Reset " /> <input
-						type="button" id="button3" value=" GO "
-						onclick="javascript:sendForm2();" />
+					<label for="inputTopN2">Find top</label> <input type="text" id="inputTopN2" value="10" />
+					<label> gene sets</label><br>
+					<label>Correlated with</label><br>
+					<input type="radio" id="radioMSigDBH" name="form2geneset" value="radioMSigDBH" checked>Select a gene set from MSigDB H (Hallmark gene sets) <br><select id="selectMSigDBH" size="1"></select><br>
+					<input type="radio" id="radioMSigDBC2CP" name="form2geneset" value="radioMSigDBC2CP" checked>Select a gene set from MSigDB C2 CP (Canonical pathways) <br><select id="selectMSigDBC2CP" size="1"></select><br>
+					<input type="radio" id="radioMSigDBC5" name="form2geneset" value="radioMSigDBC5">Select a gene set from MSigDB C5 GO BP gene sets <br><select id="selectMSigDBC5" size="1"></select><br>
+					<input type="radio" id="radioPathprint" name="form2geneset" value="radioPathprint">Select a gene set from Pathprint <br> <select id="selectPathprint" size="1"></select><br> 
+					<input type="radio" id="radioSearchGeneSet" name="form2geneset" value="radioSearchGeneSet">Search a gene set <input id="textfieldGeneSet" onkeypress="hideOptionsAndResults()"><br>
+					<label id="label1" for="inputCorrelation2"> with absolute correlation coefficient greater than</label><br><input type="text" id="inputCorrelation2" value="0.05" /><br>
+					<label id="label2" for="inputpValue2">and p-value less than</label><br> <input type="text" id="inputpValue2" value="0.05" /><br><br> <input type="reset" id="button4" value=" Reset " /> <input type="button" id="button3" value=" GO "	onclick="javascript:sendForm2();" />
 				</form>
 
 				<form id="form1" name="form1" class="well">
-					<label for="upgenesets">Find correlation among gene sets
-						up-regulated in phenotype 0</label><br>
-					<textarea rows="7" cols="50" id="upgenesets"></textarea>
-					<br> <label for="downgenesets">and gene sets
-						up-regulated in phenotype 1 </label><br>
-					<textarea rows="7" cols="50" id="downgenesets"></textarea>
-					<br> <label for="inputTopN">and top</label> <input type="text"
-						id="inputTopN" value="0" /><label>correlated genes sets</label><br>
-
-					<label for="inputCorrelation"> with absolute correlation
-						coefficient greater than</label> <input type="text" id="inputCorrelation"
-						value="0.05" /><br> <label for="inputpValue">and
-						p-value less than</label> <input type="text" id="inputpValue" value="0.05" /><br>
-
+					<label for="upgenesets">Find correlation among gene sets up-regulated in phenotype 0</label><br>
+					<textarea rows="7" cols="50" id="upgenesets"></textarea><br> 
+					<label for="downgenesets">and gene sets	up-regulated in phenotype 1 </label><br>
+					<textarea rows="7" cols="50" id="downgenesets"></textarea><br>
+					<label for="inputTopN">and top</label> <input type="text" id="inputTopN" value="0" />
+					<label>correlated genes sets</label><br>
+					<label for="inputCorrelation"> with absolute correlation coefficient greater than</label>
+					<input type="text" id="inputCorrelation" value="0.05" /><br>
+					<label for="inputpValue">and p-value less than</label>
+					<input type="text" id="inputpValue" value="0.05" /><br>
 					<label for="selectGeneSetCollection">The gene sets are from</label>
 					<select id="selectGeneSetCollection" size="1">
 						<option value="pathprint">Pathprint</option>
-						<option value="MSigDBH" selected="selected">MSigDB H
-							(Hallmark gene sets)</option>
-						<option value="MSigDBC2CP">MSigDB C2 CP (Canonical
-							pathways)</option>
+						<option value="MSigDBH" selected="selected">MSigDB H (Hallmark gene sets)</option>
+						<option value="MSigDBC2CP">MSigDB C2 CP (Canonical pathways)</option>
 						<option value="MSigDBC5">MSigDB C5 GO BP gene sets</option>
-					</select> <br> <label for="selectClusterMethod">Cluster gene
-						sets using</label><br> <select id="selectClusterMethod" size="1">
+					</select> <br> <label for="selectClusterMethod">Cluster gene sets using</label><br> <select id="selectClusterMethod" size="1">
 						<option value="average">Average linkage</option>
-						<option value="complete" selected="selected">Complete
-							linkage</option>
+						<option value="complete" selected="selected">Complete linkage</option>
 						<option value="single">Single linkage</option>
 						<option value="DoNotCluster">Do not cluster</option>
-					</select> <input type="reset" id="button2" value=" Reset " /> <input
-						type="button" id="button1" value=" GO "
-						onclick="javascript:send();" />
+					</select> <input type="reset" id="button2" value=" Reset " /> <input type="button" id="button1" value=" GO " onclick="javascript:send();" />
 				</form>
 			</div>
-			<div class="col-sm-6 " style="padding-left: 20px;">
+			<div class="col-sm-6" style="padding-left: 40px; margin-top: 40px;">
 				<div class="col-sm-12" id="divAnalysis1">
 					<h4>
 						<input type="radio" id="radioAnalysis1" name="radioAnalysis"
@@ -1429,29 +1371,15 @@
 					<div class="col-sm-6 result box" id="divHeatmap">
 						<!-- The "box" class here is used to find the right DIV when resizing.
                          	See sizeCanvas() -->
-						<label
-							style="display: block; text-align: center; font-size: 20px;padding-bottom: 10px;">Correlation
-							Heatmap</label>
-						<button
-							class="button-tiny button button-rounded button-raised button-small-caps"
-							type="button" id="buttonpng1" onclick="saveHeatmapAsPNG();"
-							style="padding-right: 11px; padding-left: 11px;position: absolute; z-index: 99999999;font-size:14px;" />
-						PNG
-						</button>
+						<label style="display: block; text-align: center; font-size: 20px;padding-bottom: 10px;">Correlation Heatmap</label>
+						<button	class="button-tiny button button-rounded button-raised button-small-caps" type="button" id="buttonpng1" onclick="saveHeatmapAsPNG();" style="padding-right: 11px; padding-left: 11px;position: absolute; z-index: 99999999;font-size:14px;" />PNG</button>
 						<!-- This div gets replaced by sizeCanvas() -->
 						<div>
 							<canvas id="canvas1"></canvas>
 						</div>
 					</div>
-					<div class="col-sm-6 result row" id="divNetwork"
-						style="left: 15px; padding-right: 0px; margin-right: 0px;">
-
-						<label class="result" id="netWorkHeadLabel"
-							style="display: block; text-align: center; font-size: 20px;">Correlation
-							Network</label>
-
-
-
+					<div class="col-sm-6 result row" id="divNetwork" style="left: 15px; padding-right: 0px; margin-right: 0px;">
+						<label class="result" id="netWorkHeadLabel"	style="display: block; text-align: center; font-size: 20px;">Correlation Network</label>
 						<div class="col-sm-12 row result box"
 							style="padding-left: 15px; padding-top: 5px;">
 							<div class="result row" style="position: relative">
@@ -1472,56 +1400,36 @@
 										<button class="button-tiny button button-rounded button-raised button-small-caps" type="button" id="buttonjpg" onclick="saveNetworkAsJPG();" style="padding-right: 11px; padding-left: 11px;" />JPG</button>
 										<button class="button-tiny button button-rounded button-raised button-small-caps" type="button" id="buttonjson" onclick="saveNetworkAsJSON();" style="padding-right: 11px; padding-left: 11px;" />JSON</button>
 									</div>
-
-
 								</div>
-																
+										
 								<div class="result" id="cy"></div>
 								<div id="divLegend" style="display:none;position:absolute;margin-top:32px;border-radius:5px;border-top-right-radius: 0px;border-top-left-radius: 0px;background:#f7f7f7;bottom: 0;right: 0;"><canvas id="canvas3" width="450" height="250"></canvas></div>
 							</div>
 						</div>
 						<div class="col-sm-12 result row" id="divSliders"
 							style="padding-top: 13px;padding-bottom: 14px; padding-right: 0px; background-color: #e7e7e7;border-bottom-right-radius: 5px;border-bottom-left-radius: 5px; padding-left: 5px;">
-							<div class="col-sm-12 box result"
-								style="padding-left: 15px; width: 75%;">
+							<div class="col-sm-12 box result" style="padding-left: 15px; width: 75%;">
 								<div class="col-sm-12 row result">
-									<label class="result" for="amount" style="width: 180px">Min
-										absolute correlation:</label> <input class="result" size="3"
-										type="range" id="coefficientSlider" min="0.01" max="1"
-										step="0.01" style="width: 150px; display: inline" /> <input
-										class="result" disabled=true size="3" type="text"
-										id="coefficientText"
-										style="border: 0; margin-bottom: 0; width: 50px; background-color:#f6f6f6 " />
+									<label class="result" for="amount" style="width: 180px">Min	absolute correlation:</label>
+									<input class="result" size="3" type="range" id="coefficientSlider" min="0.01" max="1" step="0.01" style="width: 150px; display: inline" />
+									<input class="result" disabled=true size="3" type="text" id="coefficientText" style="border: 0; margin-bottom: 0; width: 50px; background-color:#f6f6f6 " />
 								</div>
 								<div class="col-sm-12 row result">
-									<label class="result" for="pvalueSlider" style="width: 180px">Max
-										correlation p value:</label> <input class="result" size="3"
-										type="range" id="pvalueSlider" min="0.001" max="0.05"
-										step="0.001" style="width: 150px; display: inline" /> <input
-										class="result" disabled=true size="3" type="text"
-										id="pvalueText"
-										style="border: 0; margin-bottom: 0; width: 50px; background-color:#f6f6f6" />
+									<label class="result" for="pvalueSlider" style="width: 180px">Max correlation p value:</label>
+									<input class="result" size="3" type="range" id="pvalueSlider" min="0.001" max="0.05" step="0.001" style="width: 150px; display: inline" />
+									<input class="result" disabled=true size="3" type="text" id="pvalueText" style="border: 0; margin-bottom: 0; width: 50px; background-color:#f6f6f6" />
 								</div>
-
-							</div>
-<!-- 							<button class="button button-raised button-primary button-pill button-small-caps col-sm-2 row result use" type="button" onclick="showLegend();" style="padding-right: 14px;padding-left: 14px;;position: absolute; z-index: 99999999; float:right;"/>Legend</button> -->
-							
+							</div>							
 							<button type="button" class="btn btn-lg col-sm-3 row result user" onclick="showLegend();" style="background-color:#f6f6f6;margin-top: 9px;" >Legend</button>
-
 						</div>
-
 					</div>
-
 				</div>
 			</div>
-			<div class="row result" id="divGeneList"
-				style="padding: 20px; padding-top: 15px; margin-top: 30px; border-top: 5px solid #d3d3d3; margin-left: 0px; margin-right: 0px;">
-				<label class="result" style="font-size: 24px; margin-bottom: 15px;">Gene
-					set (click on a gene set name on heatmap or network to select)</label><br>
+			<div class="row result" id="divGeneList" style="padding: 20px; padding-top: 15px; margin-top: 30px; border-top: 5px solid #d3d3d3; margin-left: 0px; margin-right: 0px;">
+				<label class="result" style="font-size: 24px; margin-bottom: 15px;">Gene set (click on a gene set name on heatmap or network to select)</label><br>
 				<label class="result">Name</label><br>
 				<p class="result" id="selctedLeafName"></p>
-				<label>External links</label><br> <a id="selctedLeafNameLink"
-					target="_blank" href=""></a> <br>
+				<label>External links</label><br> <a id="selctedLeafNameLink" target="_blank" href=""></a> <br>
 				<label>Members</label><br>
 				<table id="table2" class="display" cellspacing="0" width="100%">
 					<thead>
@@ -1540,19 +1448,15 @@
 						</tr>
 					</tfoot>
 				</table>
-				<p id="table2waiting" class="waitmessage">Please wait. Getting
-					data ....</p>
+				<p id="table2waiting" class="waitmessage">Please wait. Getting data ....</p>
 			</div>
-
 			<div class="row result" id="divTable1"
 				style="border-top: 5px solid #d3d3d3;">
 				<div class="col-sm-12 result">
 					<div class="col-sm-12 result">
-						<h3 class="result" style="font-weight: bold; margin-bottom: 15px">Network
-							Data Table</h3>
+						<h3 class="result" style="font-weight: bold; margin-bottom: 15px">Network Data Table</h3>
 						<div class="col-sm-12 result">
-							<table id="table1" class="display result" cellspacing="0"
-								width="100%">
+							<table id="table1" class="display result" cellspacing="0" width="100%">
 								<thead class="result">
 									<tr class="result">
 										<th class="result">Gene Set A</th>
@@ -1584,16 +1488,10 @@
 	<script>
 		
 		function changeRadioSelection (e){
-			//$('#radioSelectGeneSet').prop('checked', true);
-			//alert(e.target.id);
-			if(e.target.id =="selectPathprint") {
-				document.getElementById("radioPathprint").checked = true;
-			} else if(e.target.id =="selectMSigDBC2CP") {
-				document.getElementById("radioMSigDBC2CP").checked = true;
-			} else if(e.target.id =="selectMSigDBC5") {
-				document.getElementById("radioMSigDBC5").checked = true;
-			} else if(e.target.id =="selectMSigDBH") {
-				document.getElementById("radioMSigDBH").checked = true;
+			if(e.target.id =="selectPathprint") {document.getElementById("radioPathprint").checked = true;
+			} else if(e.target.id =="selectMSigDBC2CP") {document.getElementById("radioMSigDBC2CP").checked = true;
+			} else if(e.target.id =="selectMSigDBC5") {document.getElementById("radioMSigDBC5").checked = true;
+			} else if(e.target.id =="selectMSigDBH") {document.getElementById("radioMSigDBH").checked = true;
 			} else {}
 			$("#label1").show();
 			$("#inputCorrelation2").show();
