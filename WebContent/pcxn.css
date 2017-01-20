@@ -1,3 +1,8 @@
+* {
+ font-size: 100%;
+ font-family: Arial;
+}
+
 h1 {
     color: black;
     text-align: center;
@@ -68,41 +73,9 @@ body {
 
 #cy{
 	 border:3px solid #e7e7e7; 
-	 border-radius: 5px;
-/* 	 top:20px; */
-/* 	 left:30px; */
+	 border-radius: 0px;
 	 height:84vh;
 	 margin-top: 30px;
-	 border-top-right-radius: 0px;
-	 border-top-left-radius: 0px;
-	 
-}
-
-.black_overlay {
-  display: none;
-  position: absolute;
-  top: 0%;
-  left: 0%;
-  width: 100%;
-  height: 100%;
-  background-color: black;
-  z-index: 1001;
-  -moz-opacity: 0.8;
-  opacity: .80;
-  filter: alpha(opacity=80);
-}
-.white_content {
-  display: none;
-  position: absolute;
-  top: 25%;
-  left: 25%;
-  width: 50%;
-  height: 50%;
-  padding: 16px;
-  border: 16px solid orange;
-  background-color: white;
-  z-index: 1002;
-  overflow: auto;
 }
 
 /* Add animation (fade in the popup) */
@@ -293,52 +266,6 @@ input[type="range"]::-ms-tooltip {
   text-decoration: none;
 }
 
- /* Dropdown Button */
-.dropbtn {
-    background-color: #4CAF50;
-    color: white;
-    padding: 16px;
-    font-size: 16px;
-    border: none;
-    cursor: pointer;
+.button-tiny {
+	font-size:14px;
 }
-
-/* Dropdown button on hover & focus */
-.dropbtn:hover, .dropbtn:focus {
-    background-color: #3e8e41;
-}
-
-/* The container <div> - needed to position the dropdown content */
-.dropdown {
-    position: relative;
-    display: inline-block;
-}
-
-/* Dropdown Content (Hidden by Default) */
-.dropdown-content {
-    display: none;
-    position: absolute;
-    background-color: #f9f9f9;
-    min-width: 160px;
-    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-}
-
-/* Links inside the dropdown */
-.dropdown-content a {
-    color: black;
-    padding: 12px 16px;
-    text-decoration: none;
-    display: block;
-}
-
-/* Change color of dropdown links on hover */
-.dropdown-content a:hover {background-color: #f1f1f1}
-
-/* Show the dropdown menu (use JS to add this class to the .dropdown-content container when the user clicks on the dropdown button) */
-.show {display:block;}
-
-
-
-
-
-
