@@ -22,15 +22,15 @@ body {
 }
 
 #form1 {
-	width: 550px;
 	height: 450px;
 	background: #ffffff;
+	float:right;
 }
 
 #form2 {
-	width: 550px;
-	height: 450px;
+	height: 531px;
 	background: #ffffff;
+	float:right;
 }
 
 #button1, #button3 {
@@ -55,27 +55,25 @@ body {
     width: auto;
 }
 
-#divAnalysis1, #divAnalysis2 {
+#divAnalysis1, #divAnalysis2, #divExample {
+	width: 550px;
 	border-radius: 25px;
     background: #EEE;
     padding: 20px;
 }
 
 #canvas1{
-/* 	border:1px solid #d3d3d3; */
-/* 	position: absolute; */
 	margin-top:1px;
 	margin-right:15px;
-/* 	height:100vh; */
-
+/* 	height:84vh; */
 }
 
 
 #cy{
-	 border:3px solid #e7e7e7; 
-	 border-radius: 0px;
-	 height:84vh;
-	 margin-top: 30px;
+	border:3px solid #e7e7e7; 
+	border-radius: 0px;
+	height:84vh;
+	margin-top: 30px;
 }
 
 /* Add animation (fade in the popup) */
@@ -268,4 +266,50 @@ input[type="range"]::-ms-tooltip {
 
 .button-tiny {
 	font-size:14px;
+}
+
+.autocomplete-suggestions { border: 1px solid #999; background: #FFF; overflow: auto; }
+.autocomplete-suggestion { padding: 2px 5px; white-space: nowrap; overflow: hidden; }
+.autocomplete-selected { background: #F0F0F0; }
+.autocomplete-suggestions strong { font-weight: normal; color: #3399FF; }
+.autocomplete-group { padding: 2px 5px; }
+.autocomplete-group strong { display: block; border-bottom: 1px solid #000; }
+
+table.dataTable thead th {
+    position: relative;
+    background-image: none !important;
+    bAutoWidth:false;
+}
+ 
+table.dataTable thead th.sorting:after,
+table.dataTable thead th.sorting_asc:after,
+table.dataTable thead th.sorting_desc:after {
+/*     position: absolute; */
+/*     top: 12px; */
+/*     right: 8px; */
+/*     display: block; */
+    font-family: FontAwesome;
+}
+
+table.dataTable thead th.sorting:after {
+    content: "\f0dc";
+    color: #ddd;
+    font-size: 0.8em;
+    padding-top: 0.12em;
+}
+table.dataTable thead th.sorting_asc:after {
+    content: "\f0de";
+}
+table.dataTable thead th.sorting_desc:after {
+    content: "\f0dd";
+}
+
+.navigation_arrows {
+	position: fixed;
+    bottom: 4px;
+    left: 4px;
+    border: 1px solid grey;
+	border-radius: 5px;
+	padding: 2px;
+	background: lightgray;
 }
