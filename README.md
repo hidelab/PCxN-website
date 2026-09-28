@@ -53,14 +53,6 @@ Open `http://localhost:8000/index.html`.
 
 From the repo root you can instead run `python3 -m http.server 8000` and open `/explore-site/index.html`. Any static file server works (`npx serve`, VS Code Live Server).
 
-## Publish
-
-1. Confirm `explore-site/config.js` `PRODUCTION_DATA_BASE_URL` is the Hugging Face dataset's `resolve/main` URL (no trailing slash).
-2. Push this repo and enable **GitHub Pages** on `explore-site/` (or the repo root if you prefer `/explore-site/index.html`).
-3. Set `GITHUB_REPO_URL` in `config.js` if you want the header GitHub link. Documentation is always shown and opens the in-site README.
-
-To refresh the hosted data, rebuild with `scripts/` (see [scripts/README.md](scripts/README.md)) and upload the generated tree to the Hugging Face dataset: `tissues_index.json` at the root, one folder per tissue, plus `gene_membership.json`.
-
 ## How to cite
 
 A manuscript describing this tool is in preparation. Citation details will be added here when it is available.
