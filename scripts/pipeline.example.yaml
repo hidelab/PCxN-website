@@ -1,0 +1,40 @@
+# Config for scripts/run_pipeline.py.
+#
+# Copy this file (e.g. to pipeline.yaml, gitignored or not, your call) and
+# edit it rather than editing this example in place.
+#
+# Three stages, always run in this order. Each has its own `enabled` switch:
+# bin_conversion defaults OFF (most runs already have tissue TSVs in data/
+# and skip straight to website_etl); website_etl and tag_collections default
+# ON.
+
+bin_conversion:
+  enabled: true
+  # Run directory containing combined_estimates/pathway_estimates.tsv and
+  # mean_pcor2_barcode_tables/<tissue>_{estimate,pvalue,statistic}.bin -
+  # see convert_bin_to_tsv.py's module docstring for the exact layout this
+  # expects (it's the sibling pcxn_v2 R pipeline's own output convention).
+  input_dir: /data/work/Pourya/2025_pcxn/pxn/pipeline/output/MSigDB2024_refactor/MSigDB2024__gtextoil_gfilter/
+  output_dir: data
+  # tissues: [CervixUteri_CervixEctocervix]   # omit to process every tissue found
+  skip_combined: false   # true = don't copy combined_estimates/pathway_estimates.tsv through
+  gzip: true
+
+website_etl:
+  enabled: true
+  input_dir: data
+  output_dir: output
+  slice_format: json          # json | parquet
+  sort_by: abs_correlation    # fdr | p_value | abs_correlation - abs_correlation matches
+                               # how explore-site/ ranks neighbors
+  pvalue_mode: neg_log10       # neg_log10 | raw
+  # extra_cols: [overlap_coefficient]
+  # max_edges_per_slice: 0     # 0 = unlimited (default); data hosting isn't size-constrained
+  # num_buckets: 256
+  # batch_size_mb: 64
+  # pretty_index: false
+  # keep_temp: false
+
+tag_collections:
+  enabled: true
+  # output_dir: output   # defaults to website_etl.output_dir if omitted

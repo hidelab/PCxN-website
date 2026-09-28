@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 220" role="img" aria-label="Example heatmap">
+  <rect width="360" height="220" fill="#fff"/>
+  <defs>
+    <linearGradient id="hm" x1="0" x2="1">
+      <stop offset="0" stop-color="#3b6cb5"/>
+      <stop offset="0.5" stop-color="#f3f4f6"/>
+      <stop offset="1" stop-color="#c45c5c"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(70,18)">
+    <rect x="0" y="0" width="22" height="22" fill="#c45c5c"/>
+    <rect x="24" y="0" width="22" height="22" fill="#e8c4c4"/>
+    <rect x="48" y="0" width="22" height="22" fill="#f3f4f6"/>
+    <rect x="72" y="0" width="22" height="22" fill="#dce6f5"/>
+    <rect x="96" y="0" width="22" height="22" fill="#f0d0d0"/>
+    <rect x="120" y="0" width="22" height="22" fill="#9bb6e0"/>
+    <rect x="0" y="24" width="22" height="22" fill="#e8c4c4"/>
+    <rect x="24" y="24" width="22" height="22" fill="#c45c5c"/>
+    <rect x="48" y="24" width="22" height="22" fill="#e0b4b4"/>
+    <rect x="72" y="24" width="22" height="22" fill="#f3f4f6"/>
+    <rect x="96" y="24" width="22" height="22" fill="#3b6cb5"/>
+    <rect x="120" y="24" width="22" height="22" fill="#f3f4f6"/>
+    <rect x="0" y="48" width="22" height="22" fill="#f3f4f6"/>
+    <rect x="24" y="48" width="22" height="22" fill="#e0b4b4"/>
+    <rect x="48" y="48" width="22" height="22" fill="#c45c5c"/>
+    <rect x="72" y="48" width="22" height="22" fill="#d4a0a0"/>
+    <rect x="96" y="48" width="22" height="22" fill="#f3f4f6"/>
+    <rect x="120" y="48" width="22" height="22" fill="#c5d4ee"/>
+    <rect x="0" y="72" width="22" height="22" fill="#dce6f5"/>
+    <rect x="24" y="72" width="22" height="22" fill="#f3f4f6"/>
+    <rect x="48" y="72" width="22" height="22" fill="#d4a0a0"/>
+    <rect x="72" y="72" width="22" height="22" fill="#c45c5c"/>
+    <rect x="96" y="72" width="22" height="22" fill="#e8c4c4"/>
+    <rect x="120" y="72" width="22" height="22" fill="#f3f4f6"/>
+    <rect x="0" y="96" width="22" height="22" fill="#f0d0d0"/>
+    <rect x="24" y="96" width="22" height="22" fill="#3b6cb5"/>
+    <rect x="48" y="96" width="22" height="22" fill="#f3f4f6"/>
+    <rect x="72" y="96" width="22" height="22" fill="#e8c4c4"/>
+    <rect x="96" y="96" width="22" height="22" fill="#c45c5c"/>
+    <rect x="120" y="96" width="22" height="22" fill="#dce6f5"/>
+    <rect x="0" y="120" width="22" height="22" fill="#9bb6e0"/>
+    <rect x="24" y="120" width="22" height="22" fill="#f3f4f6"/>
+    <rect x="48" y="120" width="22" height="22" fill="#c5d4ee"/>
+    <rect x="72" y="120" width="22" height="22" fill="#f3f4f6"/>
+    <rect x="96" y="120" width="22" height="22" fill="#dce6f5"/>
+    <rect x="120" y="120" width="22" height="22" fill="#c45c5c"/>
+  </g>
+  <rect x="230" y="40" width="10" height="100" fill="url(#hm)"/>
+  <text x="246" y="48" fill="#667085" font-size="10" font-family="system-ui, sans-serif">1</text>
+  <text x="246" y="144" fill="#667085" font-size="10" font-family="system-ui, sans-serif">-1</text>
+</svg>

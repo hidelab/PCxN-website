@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PCxN Explore</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Which pathways correlate with the one you are studying?">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-dt@3.0.4/css/dataTables.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/canvasxpress@69.6.1/src/canvasXpress.css">
+<link rel="stylesheet" href="style.css?v=4">
+</head>
+<body>
+
+<header>
+  <div class="header-row">
+    <a id="homeBrand" class="brand" href="index.html">
+      <img src="favicon.svg" alt="" width="28" height="28">
+      <span>
+        <h1>PCxN Explore</h1>
+        <p class="subtitle">Pathway Co-Activity Map</p>
+      </span>
+    </a>
+    <nav class="header-links" aria-label="Site">
+      <a id="homeLink" href="index.html">Home</a>
+      <a id="docsLink" href="documentation.html">Documentation</a>
+      <button type="button" id="citeButton" class="text-btn">Cite me</button>
+      <button type="button" id="aboutButton" class="text-btn">About</button>
+      <a id="githubLink" hidden rel="noopener noreferrer" target="_blank">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div class="page">
+<div id="error-banner" class="error-banner" hidden>
+  <span id="error-banner-text"></span>
+  <button type="button" id="errorDismiss" class="text-btn">dismiss</button>
+</div>
+
+<main>
+  <form id="query-form" aria-label="Query">
+    <div class="field-row">
+      <span class="field-label" id="tissueListLabel">Tissue</span>
+      <div id="tissueCombobox" class="combobox tissue-combobox">
+        <button type="button" id="tissueSummary" class="tissue-summary" aria-haspopup="listbox" aria-expanded="false" aria-controls="tissueMenu" aria-labelledby="tissueListLabel">combined</button>
+        <div id="tissueMenu" class="combobox-menu tissue-menu" hidden>
+          <input type="search" id="tissueFilter" class="tissue-filter" placeholder="Filter tissues…" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-controls="tissueList" aria-label="Filter tissues">
+          <ul id="tissueList" class="tissue-menu-list" role="listbox" aria-labelledby="tissueListLabel"></ul>
+        </div>
+      </div>
+      <p class="hint">combined is an average across all tissues.</p>
+    </div>
+
+    <div class="field-row">
+      <label for="collectionSelect">Collection</label>
+      <select id="collectionSelect">
+        <option value="">All</option>
+      </select>
+    </div>
+
+    <div class="field-row groups-field">
+      <div class="groups-header">
+        <label>Pathway groups</label>
+        <button type="button" id="addGroupButton" class="text-btn">+ Add group</button>
+      </div>
+      <div id="groupsContainer"></div>
+      <p id="fetchCounter" class="hint"></p>
+    </div>
+
+    <div class="param-grid">
+      <div class="field-row">
+        <label for="topNInput">Top N neighbors</label>
+        <input id="topNInput" type="number" min="0" step="1" value="10">
+      </div>
+      <div class="field-row">
+        <label for="corrCutoffInput">Absolute correlation &gt;</label>
+        <input id="corrCutoffInput" type="number" min="0" max="1" step="0.01" value="0.5">
+      </div>
+      <div class="field-row">
+        <label for="pCutoffInput">p-value &lt;</label>
+        <input id="pCutoffInput" type="number" min="0" max="1" step="0.001" value="0.05">
+      </div>
+    </div>
+
+    <div class="field-row buttons">
+      <button id="goButton" type="submit">Build network</button>
+      <button id="resetButton" type="button">Reset</button>
+    </div>
+
+    <p id="index-meta" class="status"></p>
+    <p id="query-status" class="status" aria-live="polite"></p>
+  </form>
+
+  <div id="workspace">
+    <section id="empty-state">
+      <p class="purpose">Which pathways correlate with the one you are studying?</p>
+      <p>PCxN measures how pathways rise and fall together across thousands of public expression experiments — including pathways that share no genes at all.</p>
+      <p>Pick a tissue and a pathway collection, add one or more pathways, then build the network. You'll get the neighbourhood three ways: a network, an edge table, and a heatmap.</p>
+      <p class="examples">Examples:
+        <button type="button" class="example-chip" data-pathway="KEGG_P53_SIGNALING_PATHWAY" data-collection="KEGG" data-corr="0.2">KEGG p53</button>,
+        <button type="button" class="example-chip" data-pathway="KEGG_WNT_SIGNALING_PATHWAY" data-collection="KEGG" data-corr="0.2">Wnt</button>,
+        <button type="button" class="example-chip" data-pathway="KEGG_NOTCH_SIGNALING_PATHWAY" data-collection="KEGG" data-corr="0.2">Notch</button>,
+        <button type="button" class="example-chip" data-pathways="KEGG_CITRATE_CYCLE_TCA_CYCLE,KEGG_OXIDATIVE_PHOSPHORYLATION,REACTOME_MITOCHONDRIAL_FATTY_ACID_BETA_OXIDATION,KEGG_VALINE_LEUCINE_AND_ISOLEUCINE_DEGRADATION,KEGG_PROPANOATE_METABOLISM,KEGG_FATTY_ACID_METABOLISM,REACTOME_MITOCHONDRIAL_PROTEIN_IMPORT,KEGG_PYRUVATE_METABOLISM" data-collection="" data-group-name="mitochondrial energy production">mitochondrial energy production</button>,
+        <button type="button" class="example-chip" data-pathways="KEGG_MEDICUS_REFERENCE_TLR1_2_4_NFKB_SIGNALING_PATHWAY,KEGG_CHEMOKINE_SIGNALING_PATHWAY,BIOCARTA_NFKB_PATHWAY,REACTOME_INTERFERON_GAMMA_SIGNALING,KEGG_CYTOKINE_CYTOKINE_RECEPTOR_INTERACTION,PID_IL6_7_PATHWAY,KEGG_NOD_LIKE_RECEPTOR_SIGNALING_PATHWAY,BIOCARTA_MONOCYTE_PATHWAY" data-collection="" data-group-name="innate immunity and inflammation">innate immunity and inflammation</button>,
+        <button type="button" class="example-chip" data-pathways="KEGG_MEDICUS_REFERENCE_TLR1_2_4_NFKB_SIGNALING_PATHWAY,KEGG_CHEMOKINE_SIGNALING_PATHWAY,BIOCARTA_NFKB_PATHWAY,REACTOME_INTERFERON_GAMMA_SIGNALING,KEGG_CYTOKINE_CYTOKINE_RECEPTOR_INTERACTION,PID_IL6_7_PATHWAY,KEGG_NOD_LIKE_RECEPTOR_SIGNALING_PATHWAY,BIOCARTA_MONOCYTE_PATHWAY" data-group-name="innate immunity and inflammation" data-pathways2="KEGG_CITRATE_CYCLE_TCA_CYCLE,KEGG_OXIDATIVE_PHOSPHORYLATION,REACTOME_MITOCHONDRIAL_FATTY_ACID_BETA_OXIDATION,KEGG_VALINE_LEUCINE_AND_ISOLEUCINE_DEGRADATION,KEGG_PROPANOATE_METABOLISM,KEGG_FATTY_ACID_METABOLISM,REACTOME_MITOCHONDRIAL_PROTEIN_IMPORT,KEGG_PYRUVATE_METABOLISM" data-group-name2="mitochondrial energy production" data-collection="" data-top-n="0" data-corr="0.2">innate immunity vs mitochondrial energy</button>
+      </p>
+      <p class="empty-genes">Starting from a gene list instead? <button type="button" id="emptyFromGenes" class="example-chip">Find matching pathways</button></p>
+      <p class="empty-meta"><span id="emptyCatalog"></span></p>
+      <figure class="homepage-figure">
+        <img src="homepageimage.jpeg" alt="Example network, heatmap, and edge table views" loading="lazy" decoding="async" width="1440" height="833">
+      </figure>
+    </section>
+
+    <section id="results" hidden>
+      <div class="results-bar">
+        <span id="result-meta" hidden></span>
+        <button type="button" id="copyLinkButton" hidden>Copy link</button>
+      </div>
+      <div id="tissueTabList" class="tab-list tissue-tab-list" role="tablist" aria-label="Tissues" hidden></div>
+      <div class="tab-list view-tab-list" role="tablist" aria-label="Result views">
+        <button type="button" class="tab view-tab" role="tab" id="tab-network" data-tab="network" aria-selected="true">Network</button>
+        <button type="button" class="tab view-tab" role="tab" id="tab-table" data-tab="table" aria-selected="false">Edge table</button>
+        <button type="button" class="tab view-tab" role="tab" id="tab-heatmap" data-tab="heatmap" aria-selected="false">Heatmap</button>
+      </div>
+
+      <section id="live-filters" aria-label="Live filters" hidden>
+        <div class="field-row">
+          <label for="corrSlider">Correlation cutoff: <output id="corrSliderValue"></output></label>
+          <input id="corrSlider" type="range" min="0" max="1" step="0.01" value="0.5">
+        </div>
+        <div class="field-row">
+          <label for="pSlider">p-value cutoff: <output id="pSliderValue"></output></label>
+          <input id="pSlider" type="range" min="0.001" max="0.05" step="0.001" value="0.05">
+        </div>
+      </section>
+
+      <section id="network-section" hidden>
+        <div class="section-head">
+          <h2>Network</h2>
+          <div class="network-tools">
+            <label for="layoutSelect">Layout
+              <select id="layoutSelect">
+                <option value="cose">cose</option>
+                <option value="concentric">concentric</option>
+                <option value="circle">circle</option>
+                <option value="grid">grid</option>
+              </select>
+            </label>
+            <button type="button" id="fitButton">Fit</button>
+            <button type="button" id="saveNetworkPngButton">Save PNG</button>
+          </div>
+        </div>
+        <p id="node-info" class="node-info"></p>
+        <div id="cyWrap" class="cy-wrap">
+          <div id="cyNav" class="cy-nav" role="toolbar" aria-label="Network navigation">
+            <button type="button" id="cyZoomIn" aria-label="Zoom in">+</button>
+            <button type="button" id="cyZoomOut" aria-label="Zoom out">−</button>
+            <button type="button" id="cyFit" aria-label="Fit to view">⛶</button>
+          </div>
+          <div id="cy"></div>
+          <div id="cyTooltip" class="cy-tooltip" hidden></div>
+        </div>
+        <div id="legend" class="legend" aria-live="polite"></div>
+        <p class="legend-note">Red edges are positive correlation, blue negative.</p>
+        <div class="graph-nodes">
+          <div class="section-head">
+            <h3>Pathways in this graph</h3>
+            <div class="graph-node-tools">
+              <span id="graphNodeMeta" class="graph-node-meta"></span>
+              <button type="button" id="graphShowAll" hidden>Show all</button>
+            </div>
+          </div>
+          <p class="graph-node-note">Uncheck a row to take that node out of the graph. Check it again to put it back. Linked Pathways opens the partners it connects to in this view, with correlation and p-value. Search below to add another catalog pathway.</p>
+          <div class="graph-add combobox">
+            <label class="field-label" for="graphAddInput">Add a pathway to the graph</label>
+            <div class="graph-add-row">
+              <input id="graphAddInput" class="group-pathway-input" type="search" placeholder="Search catalog…" autocomplete="off" aria-autocomplete="list" aria-expanded="false" aria-controls="graphAddMenu">
+              <button type="button" id="graphAddButton">Add</button>
+            </div>
+            <ul id="graphAddMenu" class="combobox-menu" hidden></ul>
+          </div>
+          <div class="graph-node-table-wrap">
+            <table id="graphNodeTable">
+              <thead>
+                <tr>
+                  <th scope="col">In graph</th>
+                  <th scope="col">Pathway</th>
+                  <th scope="col">Role</th>
+                  <th scope="col">Edges</th>
+                  <th scope="col">Genes</th>
+                  <th scope="col">Linked Pathways</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="heatmap-section" hidden>
+        <div class="section-head">
+          <h2>Heatmap</h2>
+          <div class="table-tools">
+            <button type="button" id="saveHeatmapPngButton">Save PNG</button>
+          </div>
+        </div>
+        <div id="heatmap"></div>
+      </section>
+
+      <section id="table-section" hidden>
+        <div class="section-head">
+          <h2>Edges</h2>
+          <div class="table-tools">
+            <button type="button" id="copyPathwaysButton">Copy pathways</button>
+            <button type="button" id="copyGenesButton">Copy genes</button>
+            <button id="exportCsvButton" type="button">Export CSV</button>
+          </div>
+        </div>
+        <p class="table-copy-note">Copy pathways lists every pathway in the current edge table. Copy genes lists the unique gene symbols from those pathways.</p>
+        <table id="edgeTable" class="display" style="width:100%">
+          <thead>
+            <tr><th>Pathway A</th><th>Pathway B</th><th>Correlation</th><th>p-value</th><th>FDR</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <p>Data served from <span id="data-base-url-display"></span></p>
+</footer>
+</div>
+
+<dialog id="citeDialog">
+  <form method="dialog">
+    <h2>Cite me</h2>
+    <p>A manuscript describing this tool is in preparation. Citation details will be posted here when it is available.</p>
+    <button type="submit" value="close">Close</button>
+  </form>
+</dialog>
+
+<dialog id="aboutDialog">
+  <form method="dialog">
+    <h2>About</h2>
+    <p>The question this tool answers: which pathways correlate with the one you are studying?</p>
+    <p>PCxN Explore rebuilds the old "top N neighbors" view as static files. Add one or more pathways to one or more groups, then Build network — the page fetches each selected pathway's slice, ranks their combined topN neighbors, and draws the induced graph. Nodes are colored by which group they came from; discovered neighbors are blue.</p>
+    <p>Sliders re-filter the current result without another fetch. Click a node to highlight its neighborhood. The URL keeps the query (including every group and pathway) so you can send someone the same neighborhood.</p>
+    <button type="submit" value="close">Close</button>
+  </form>
+</dialog>
+
+<dialog id="genesDialog">
+  <h2 id="genesDialogTitle">Pathway genes</h2>
+  <p id="genesDialogMeta" class="hint"></p>
+  <div class="genes-dialog-toolbar">
+    <button type="button" id="copyPathwayGenesButton">Copy genes</button>
+  </div>
+  <div id="genesDialogList" class="genes-dialog-list"></div>
+  <div class="bulk-lookup-actions">
+    <button type="button" id="genesDialogClose">Close</button>
+  </div>
+</dialog>
+
+<dialog id="linksDialog">
+  <h2 id="linksDialogTitle">Connected pathways</h2>
+  <p id="linksDialogMeta" class="hint"></p>
+  <div class="genes-dialog-toolbar">
+    <button type="button" id="copyPathwayLinksButton">Copy</button>
+  </div>
+  <div id="linksDialogList" class="genes-dialog-list"></div>
+  <div class="bulk-lookup-actions">
+    <button type="button" id="linksDialogClose">Close</button>
+  </div>
+</dialog>
+
+<dialog id="fromGenesDialog">
+  <h2 id="fromGenesTitle">Pathway lookup from genes</h2>
+  <label for="fromGenesList">Gene symbols or Entrez IDs</label>
+  <p class="from-genes-examples">Examples:
+    <button type="button" class="text-btn from-genes-example" data-genes="CD68 ITGAM ITGAX CD14 AIF1 TYROBP FCER1G FCGR2A FCGR3A C1QA C1QB C1QC CCL2 CCL3 CCL4 CCL5 CXCL8 CXCL9 CXCL10 IL6 IL1B IL1RN TNF TLR2 TLR4 NLRP3 CASP1 SPP1 LYZ MMP9 MMP12 CTSS MSR1 MRC1 CD163 TREM2 LGALS3 S100A8 S100A9 SOCS3 STAT1 IRF8 PTGS2 SERPINE1 VCAM1 ICAM1 PTPRC CYBB CSF1R CD44">Adipose inflammation</button>,
+    <button type="button" class="text-btn from-genes-example" data-genes="NDUFA1 NDUFA2 NDUFA5 NDUFA8 NDUFB3 NDUFB5 NDUFS1 NDUFS3 NDUFV2 SDHA SDHB SDHC SDHD UQCRB UQCRC1 UQCRC2 UQCRFS1 CYC1 COX4I1 COX5A COX5B COX6C COX7B COX8A CS ACO2 IDH3A IDH3B OGDH SUCLA2 FH MDH2 PDHA1 PDHB DLAT DLD CPT1B CPT2 ACADM ACADS ACADVL HADHA HADHB ECHS1 ACAA2 ETFA ETFB SLC25A20 PPARGC1A ADIPOQ">Mitochondrial oxidative capacity</button>
+  </p>
+  <p class="from-genes-examples-note">illustrative marker genes, not experimental data</p>
+  <textarea id="fromGenesList" rows="6" placeholder="One per line, or comma-separated"></textarea>
+  <div class="from-genes-cutoff">
+    <label for="fromGenesQCutoff">q-value &lt;</label>
+    <input id="fromGenesQCutoff" type="number" min="0" max="1" step="0.001" value="0.05">
+  </div>
+  <p id="fromGenesStatus" class="hint"></p>
+  <div class="bulk-lookup-toolbar">
+    <span id="fromGenesCount"></span>
+    <button type="button" id="fromGenesSelectAll" class="text-btn">Select all</button>
+    <button type="button" id="fromGenesClearVisible" class="text-btn">Clear visible</button>
+  </div>
+  <div class="from-genes-table-wrap">
+    <table id="fromGenesTable">
+      <thead>
+        <tr>
+          <th></th>
+          <th data-sort="name" aria-sort="none">Pathway</th>
+          <th data-sort="size" aria-sort="none">Size</th>
+          <th data-sort="overlap" aria-sort="none">Overlap</th>
+          <th data-sort="fold" aria-sort="none">Fold</th>
+          <th data-sort="q" aria-sort="ascending">q</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <div class="bulk-lookup-actions">
+    <button type="button" id="fromGenesDone">Done</button>
+  </div>
+</dialog>
+
+<dialog id="bulkLookupDialog">
+  <h2 id="bulkLookupTitle">From pathway</h2>
+  <label for="bulkLookupTerms">Search terms</label>
+  <textarea id="bulkLookupTerms" rows="4" placeholder="One term per line, or comma-separated"></textarea>
+  <fieldset class="bulk-mode">
+    <legend>Match</legend>
+    <label><input type="radio" name="bulkLookupMode" value="or" checked> OR — name contains any term</label>
+    <label><input type="radio" name="bulkLookupMode" value="and"> AND — name contains every term</label>
+  </fieldset>
+  <div class="bulk-lookup-toolbar">
+    <span id="bulkLookupCount"></span>
+    <button type="button" id="bulkLookupSelectAll" class="text-btn">Select all</button>
+    <button type="button" id="bulkLookupClearVisible" class="text-btn">Clear visible</button>
+  </div>
+  <ul id="bulkLookupList" class="bulk-lookup-list"></ul>
+  <div class="bulk-lookup-actions">
+    <button type="button" id="bulkLookupDone">Done</button>
+  </div>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/cytoscape@3.34.3/dist/cytoscape.min.js"></script>
+<!-- datatables.net = the core engine (defines window.DataTable); datatables.net-dt
+     = a thin styling-integration shim that only reads window.DataTable — both
+     are required, core first. -->
+<script src="https://cdn.jsdelivr.net/npm/datatables.net@3.0.4/js/dataTables.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/datatables.net-dt@3.0.4/js/dataTables.dataTables.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvasxpress@69.6.1/src/canvasXpress.js"></script>
+<script src="config.js"></script>
+<script src="app.js?v=12"></script>
+</body>
+</html>

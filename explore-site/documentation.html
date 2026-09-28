@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Documentation — PCxN Explore</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="PCxN Explore documentation">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css?v=4">
+</head>
+<body>
+
+<header>
+  <div class="header-row">
+    <a id="homeBrand" class="brand" href="index.html">
+      <img src="favicon.svg" alt="" width="28" height="28">
+      <span>
+        <h1>PCxN Explore</h1>
+        <p class="subtitle">Pathway Co-Activity Map</p>
+      </span>
+    </a>
+    <nav class="header-links" aria-label="Site">
+      <a id="homeLink" href="index.html">Home</a>
+      <a id="docsLink" href="documentation.html" aria-current="page">Documentation</a>
+      <button type="button" id="citeButton" class="text-btn">Cite me</button>
+      <button type="button" id="aboutButton" class="text-btn">About</button>
+    </nav>
+  </div>
+</header>
+
+<div class="page">
+  <article class="docs">
+    <h1>PCxN Explore</h1>
+    <p>A static <strong>Pathway Co-Activity Map</strong>. Given a pathway — or a group of pathways — it shows which other pathways rise and fall with it across public expression experiments, including pairs that share no genes.</p>
+    <p>The site is plain HTML, CSS, and JavaScript. There is no backend. The UI lives in <code>explore-site/</code>. Pathway slices and indexes are served from <a href="https://huggingface.co/datasets/sgupta15/pcxn-explore-data" rel="noopener noreferrer" target="_blank">Hugging Face</a>.</p>
+    <p><strong>The question it answers:</strong> which pathways correlate with the one you are studying?</p>
+
+    <h2>What you can do</h2>
+    <ul>
+      <li>Pick one or more <strong>tissue-cell types</strong> (54 GTEx tissues plus a <code>combined</code> default) and a <strong>collection</strong> (Reactome, WikiPathways, KEGG, BioCarta, PID, and smaller source DBs).</li>
+      <li>Add pathways to one or more named <strong>groups</strong>, then <strong>Build network</strong>.</li>
+      <li>See the neighborhood three ways: a Cytoscape <strong>network</strong>, an <strong>edge table</strong>, and a <strong>heatmap</strong>.</li>
+      <li>Look up pathways <strong>from a gene list</strong> (over-representation with BH-adjusted q-values). Example lists in that dialog are illustrative marker genes, not experimental data.</li>
+      <li>Hide or add nodes from the graph table, view <strong>genes</strong> in a pathway, and view <strong>linked pathways</strong> with correlation and p-value.</li>
+      <li>Share a result: the URL keeps tissue, groups, pathways, and cutoffs.</li>
+    </ul>
+    <p>Correlation is Pearson-style pathway co-activity (<code>r</code>). Red edges are positive, blue negative; color intensity follows <code>|r|</code>. Node size is degree in the current graph. Sliders re-filter without another fetch.</p>
+    <p>A query is capped at <strong>60 slice fetches</strong>: <code>tissues × (selected pathways + topN) ≤ 60</code>. Lower topN, fewer tissues, or fewer seeds if you hit the limit. TopN <code>0</code> draws only edges among the selected pathways (used by the two-group comparison example).</p>
+
+    <h2>Data</h2>
+    <table>
+      <tbody>
+        <tr><th scope="row">Pathways</th><td>2,730</td></tr>
+        <tr><th scope="row">Tissue-cell types</th><td>54 (plus a <code>combined</code> network)</td></tr>
+        <tr><th scope="row">Collections</th><td>8, from each pathway's <code>source_db</code></td></tr>
+        <tr><th scope="row">Hosted data</th><td><a href="https://huggingface.co/datasets/sgupta15/pcxn-explore-data" rel="noopener noreferrer" target="_blank">sgupta15/pcxn-explore-data</a></td></tr>
+      </tbody>
+    </table>
+    <p>Each tissue folder has a <code>pathway_index.json</code> and one JSON <strong>slice</strong> per pathway (that pathway's correlations to every other pathway). <code>tissues_index.json</code> lists tissues. <code>gene_membership.json</code> is tissue-independent and is loaded only when you open From genes or view genes.</p>
+    <p><code>explore-site/config.js</code> points the site at the Hugging Face dataset's <code>resolve/main</code> URL.</p>
+
+    <h2>Repository layout</h2>
+    <pre><code>explore-site/     # live UI (host this on GitHub Pages)
+scripts/          # ETL: TSV → per-pathway JSON slices + indexes
+.nojekyll         # allow GitHub Pages to serve this tree as-is</code></pre>
+
+    <h2>Run the site</h2>
+    <p>Serve <code>explore-site/</code> with any static file server. The page fetches data from Hugging Face.</p>
+    <pre><code>cd explore-site
+python3 -m http.server 8000</code></pre>
+    <p>Open <code>http://localhost:8000/index.html</code>.</p>
+    <p>From the repo root you can instead run <code>python3 -m http.server 8000</code> and open <code>/explore-site/index.html</code>. Any static file server works (<code>npx serve</code>, VS Code Live Server).</p>
+
+    <h2>Publish</h2>
+    <ol>
+      <li>Confirm <code>explore-site/config.js</code> <code>PRODUCTION_DATA_BASE_URL</code> is the Hugging Face dataset's <code>resolve/main</code> URL (no trailing slash).</li>
+      <li>Push this repo and enable <strong>GitHub Pages</strong> on <code>explore-site/</code> (or the repo root if you prefer <code>/explore-site/index.html</code>).</li>
+      <li>Set <code>GITHUB_REPO_URL</code> in <code>config.js</code> if you want the header GitHub link. Documentation is always shown and opens this page.</li>
+    </ol>
+    <p>To refresh the hosted data, rebuild with <code>scripts/</code> (see <code>scripts/README.md</code>) and upload the generated tree to the Hugging Face dataset: <code>tissues_index.json</code> at the root, one folder per tissue, plus <code>gene_membership.json</code>.</p>
+  </article>
+</div>
+
+<dialog id="citeDialog">
+  <form method="dialog">
+    <h2>Cite me</h2>
+    <p>A manuscript describing this tool is in preparation. Citation details will be posted here when it is available.</p>
+    <button type="submit" value="close">Close</button>
+  </form>
+</dialog>
+
+<dialog id="aboutDialog">
+  <form method="dialog">
+    <h2>About</h2>
+    <p>The question this tool answers: which pathways correlate with the one you are studying?</p>
+    <p>PCxN Explore rebuilds the old "top N neighbors" view as static files. Add one or more pathways to one or more groups, then Build network — the page fetches each selected pathway's slice, ranks their combined topN neighbors, and draws the induced graph. Nodes are colored by which group they came from; discovered neighbors are blue.</p>
+    <p>Sliders re-filter the current result without another fetch. Click a node to highlight its neighborhood. The URL keeps the query (including every group and pathway) so you can send someone the same neighborhood.</p>
+    <button type="submit" value="close">Close</button>
+  </form>
+</dialog>
+
+<script src="config.js"></script>
+<script>
+(function () {
+  const homeLink = document.getElementById("homeLink");
+  const homeBrand = document.getElementById("homeBrand");
+  const citeButton = document.getElementById("citeButton");
+  const citeDialog = document.getElementById("citeDialog");
+  const aboutButton = document.getElementById("aboutButton");
+  const aboutDialog = document.getElementById("aboutDialog");
+  const qs = window.location.search;
+  const homeHref = qs ? `index.html${qs}` : "index.html";
+  if (homeLink) homeLink.href = homeHref;
+  if (homeBrand) homeBrand.href = homeHref;
+  if (citeButton && citeDialog) {
+    citeButton.addEventListener("click", () => citeDialog.showModal());
+  }
+  if (aboutButton && aboutDialog) {
+    aboutButton.addEventListener("click", () => aboutDialog.showModal());
+  }
+})();
+</script>
+</body>
+</html>

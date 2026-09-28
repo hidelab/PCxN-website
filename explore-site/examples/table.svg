@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 220" role="img" aria-label="Example edge table">
+  <rect width="360" height="220" fill="#fff"/>
+  <text x="16" y="28" fill="#667085" font-size="11" font-family="system-ui, sans-serif">Pathway A</text>
+  <text x="150" y="28" fill="#667085" font-size="11" font-family="system-ui, sans-serif">Pathway B</text>
+  <text x="270" y="28" fill="#667085" font-size="11" font-family="system-ui, sans-serif">Corr</text>
+  <text x="318" y="28" fill="#667085" font-size="11" font-family="system-ui, sans-serif">p</text>
+  <line x1="12" y1="36" x2="348" y2="36" stroke="#d0d5dd"/>
+  <g fill="#1a1f2b" font-size="11" font-family="system-ui, sans-serif">
+    <text x="16" y="58">KEGG_P53</text><text x="150" y="58">PID_P53</text><text x="270" y="58">0.58</text><text x="318" y="58">8e-27</text>
+    <text x="16" y="86">REACTOME</text><text x="150" y="86">KEGG_WNT</text><text x="270" y="86">0.52</text><text x="318" y="86">1e-20</text>
+    <text x="16" y="114">BIOCARTA</text><text x="150" y="114">PID_HIF1</text><text x="270" y="114">0.48</text><text x="318" y="114">3e-16</text>
+    <text x="16" y="142">REACTOME</text><text x="150" y="142">KEGG_P53</text><text x="270" y="142">0.44</text><text x="318" y="142">6e-15</text>
+    <text x="16" y="170">PID_WNT</text><text x="150" y="170">REACTOME</text><text x="270" y="170">0.41</text><text x="318" y="170">2e-12</text>
+    <text x="16" y="198">KEGG_NOTCH</text><text x="150" y="198">PID_NOTCH</text><text x="270" y="198">0.37</text><text x="318" y="198">4e-10</text>
+  </g>
+</svg>
