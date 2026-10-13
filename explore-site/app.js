@@ -22,6 +22,7 @@ const tissueCombobox = el("tissueCombobox");
 const tissueSummary = el("tissueSummary");
 const tissueMenu = el("tissueMenu");
 const tissueFilter = el("tissueFilter");
+const tissueChipList = el("tissueChipList");
 const tissueTabList = el("tissueTabList");
 const collectionSelect = el("collectionSelect");
 const groupsContainer = el("groupsContainer");
@@ -56,6 +57,7 @@ const genesDialogTitle = el("genesDialogTitle");
 const genesDialogMeta = el("genesDialogMeta");
 const genesDialogList = el("genesDialogList");
 const copyPathwayGenesButton = el("copyPathwayGenesButton");
+const copyInterestGenesButton = el("copyInterestGenesButton");
 const genesDialogClose = el("genesDialogClose");
 const linksDialog = el("linksDialog");
 const linksDialogTitle = el("linksDialogTitle");
@@ -95,6 +97,12 @@ const fromGenesTableBody = fromGenesTable.querySelector("tbody");
 const fromGenesSelectAll = el("fromGenesSelectAll");
 const fromGenesClearVisible = el("fromGenesClearVisible");
 const fromGenesDone = el("fromGenesDone");
+const interestGenesList = el("interestGenesList");
+const interestGenesApply = el("interestGenesApply");
+const interestGenesFromLookup = el("interestGenesFromLookup");
+const interestGenesClear = el("interestGenesClear");
+const interestGenesStatus = el("interestGenesStatus");
+const interestLegendNote = el("interestLegendNote");
 const githubLink = el("githubLink");
 const docsLink = el("docsLink");
 const citeButton = el("citeButton");
@@ -187,6 +195,12 @@ let fromGenesSortKey = "q";
 let fromGenesSortDir = "asc";
 let geneMembership = null;
 let geneMembershipError = null;
+let interestApplied = false;
+let interestMatchKeys = new Set();
+let interestRecognized = [];
+let interestUnrecognized = [];
+let interestTokenCount = 0;
+const INTEREST_RING = "#ea580c";
 
 function makeGroup() {
   groupIdCounter += 1;
@@ -298,6 +312,40 @@ function setTissueChecks(ids) {
   selectedTissues = orderedTissueIds(ids);
   updateTissueSummary();
   syncTissueMenuCheckboxes();
+  renderTissueChips();
+}
+
+function renderTissueChips() {
+  if (!tissueChipList) return;
+  tissueChipList.innerHTML = "";
+  for (const id of selectedTissues) {
+    const chip = document.createElement("span");
+    chip.className = "chip";
+    const label = document.createElement("span");
+    label.className = "chip-label";
+    label.textContent = id;
+    label.title = id;
+    chip.appendChild(label);
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "chip-remove";
+    removeBtn.setAttribute("aria-label", `Remove ${id}`);
+    removeBtn.textContent = "×";
+    removeBtn.addEventListener("click", () => {
+      removeTissueChip(id);
+    });
+    chip.appendChild(removeBtn);
+    tissueChipList.appendChild(chip);
+  }
+}
+
+async function removeTissueChip(tissueId) {
+  if (selectedTissues.length <= 1) {
+    setTissueChecks(defaultTissueIds());
+    await onTissueChange();
+    return;
+  }
+  await toggleTissue(tissueId);
 }
 
 function parseUrlTissues() {
@@ -1229,6 +1277,197 @@ function pathwayGeneRecords(pathwayName) {
   return rec && Array.isArray(rec.genes) ? rec.genes : [];
 }
 
+function geneRecordMatchKeys(g) {
+  const keys = [];
+  const symbol = geneRecordSymbol(g);
+  const entrez = geneRecordEntrez(g);
+  if (symbol) keys.push(symbol.toUpperCase());
+  if (entrez) keys.push(String(entrez).toUpperCase());
+  return keys;
+}
+
+function resolveInterestTokens(tokens) {
+  const matchKeys = new Set();
+  const recognized = [];
+  const unrecognized = [];
+  const entrezToSymbol = (geneMembership && geneMembership.entrez_to_symbol) || {};
+  const symbolUniverse = new Set();
+  const entrezUniverse = new Set();
+  const pathways = (geneMembership && geneMembership.pathways) || {};
+  for (const rec of Object.values(pathways)) {
+    for (const g of rec.genes || []) {
+      const symbol = geneRecordSymbol(g);
+      const entrez = geneRecordEntrez(g);
+      if (symbol) symbolUniverse.add(symbol.toUpperCase());
+      if (entrez) entrezUniverse.add(String(entrez));
+    }
+  }
+  const seen = new Set();
+  for (const token of tokens) {
+    const upper = token.toUpperCase();
+    let display = null;
+    if (/^\d+$/.test(token)) {
+      if (entrezToSymbol[token] || entrezUniverse.has(token)) {
+        display = entrezToSymbol[token] || token;
+        matchKeys.add(token);
+        matchKeys.add(String(display).toUpperCase());
+      }
+    } else if (symbolUniverse.has(upper)) {
+      display = token;
+      matchKeys.add(upper);
+    }
+    if (!display) {
+      unrecognized.push(token);
+      continue;
+    }
+    const displayKey = String(display).toUpperCase();
+    if (seen.has(displayKey)) continue;
+    seen.add(displayKey);
+    recognized.push(display);
+  }
+  return { matchKeys, recognized, unrecognized };
+}
+
+function geneRecordIsInterest(g) {
+  if (!interestApplied || interestMatchKeys.size === 0) return false;
+  return geneRecordMatchKeys(g).some((key) => interestMatchKeys.has(key));
+}
+
+function pathwayInterestHits(pathwayName) {
+  if (!interestApplied || interestMatchKeys.size === 0) return [];
+  const hits = [];
+  const seen = new Set();
+  for (const g of pathwayGeneRecords(pathwayName)) {
+    if (!geneRecordIsInterest(g)) continue;
+    const symbol = geneRecordSymbol(g) || geneRecordEntrez(g);
+    const key = String(symbol).toUpperCase();
+    if (!symbol || seen.has(key)) continue;
+    seen.add(key);
+    hits.push({
+      symbol,
+      entrez: geneRecordEntrez(g),
+      description: geneRecordDescription(g),
+    });
+  }
+  return hits;
+}
+
+function interestOverlayLine(pathwayName) {
+  if (!interestApplied) return "";
+  const hits = pathwayInterestHits(pathwayName);
+  const total = interestRecognized.length;
+  if (hits.length === 0) return `0 of ${total} genes of interest`;
+  const names = hits.map((h) => h.symbol);
+  const shown = names.slice(0, 8).join(", ");
+  const more = names.length > 8 ? "…" : "";
+  return `${hits.length} of ${total} genes of interest: ${shown}${more}`;
+}
+
+function graphPathwaysWithInterestHit() {
+  if (!interestApplied || !cachedEdges) return 0;
+  let count = 0;
+  for (const row of graphRosterEntries()) {
+    if (row.hidden) continue;
+    if (pathwayInterestHits(row.name).length) count += 1;
+  }
+  return count;
+}
+
+function updateInterestStatus() {
+  if (!interestGenesStatus) return;
+  if (!interestApplied) {
+    interestGenesStatus.textContent = "";
+    if (interestLegendNote) interestLegendNote.hidden = true;
+    return;
+  }
+  const rec = interestRecognized.length;
+  const total = interestTokenCount;
+  const unrec = interestUnrecognized.length;
+  let text = `${rec} of ${total} gene${total === 1 ? "" : "s"} recognized`;
+  if (unrec) text += ` · ${unrec} unrecognized`;
+  if (cachedEdges) {
+    const n = graphPathwaysWithInterestHit();
+    text += ` · ${n} pathway${n === 1 ? "" : "s"} in this graph contain at least one`;
+  }
+  interestGenesStatus.textContent = text;
+  if (interestLegendNote) interestLegendNote.hidden = rec === 0;
+}
+
+function applyInterestNodeClasses() {
+  if (!isCyLive()) return;
+  cy.batch(() => {
+    cy.nodes().forEach((node) => {
+      const name = node.data("fullName") || node.id();
+      const hits = pathwayInterestHits(name);
+      node.data("interestCount", hits.length);
+      if (hits.length) node.addClass("interest-hit");
+      else node.removeClass("interest-hit");
+    });
+  });
+}
+
+function refreshInterestOverlay() {
+  updateInterestStatus();
+  if (cachedEdges) renderGraphNodeTable();
+  applyInterestNodeClasses();
+}
+
+function clearInterestState() {
+  interestApplied = false;
+  interestMatchKeys = new Set();
+  interestRecognized = [];
+  interestUnrecognized = [];
+  interestTokenCount = 0;
+  if (interestGenesList) interestGenesList.value = "";
+  updateInterestStatus();
+}
+
+async function applyInterestOverlay() {
+  const tokens = parseGeneTokens(interestGenesList ? interestGenesList.value : "");
+  if (tokens.length === 0) {
+    clearInterestState();
+    refreshInterestOverlay();
+    if (interestGenesStatus) {
+      interestGenesStatus.textContent = "Paste gene symbols or Entrez IDs, then Apply.";
+    }
+    return;
+  }
+  if (interestGenesApply) interestGenesApply.disabled = true;
+  try {
+    await ensureGeneMembership();
+    const resolved = resolveInterestTokens(tokens);
+    interestApplied = true;
+    interestMatchKeys = resolved.matchKeys;
+    interestRecognized = resolved.recognized;
+    interestUnrecognized = resolved.unrecognized;
+    interestTokenCount = tokens.length;
+    refreshInterestOverlay();
+  } catch (err) {
+    if (interestGenesStatus) {
+      interestGenesStatus.textContent = `Could not load gene membership. ${err.message}`;
+    }
+  } finally {
+    if (interestGenesApply) interestGenesApply.disabled = false;
+  }
+}
+
+function useFromGenesListForInterest() {
+  const text = (fromGenesList && fromGenesList.value ? fromGenesList.value : "").trim();
+  if (!text) {
+    if (interestGenesStatus) {
+      interestGenesStatus.textContent = "Open Bulk lookup → From genes and paste a list first, or paste genes here.";
+    }
+    return;
+  }
+  interestGenesList.value = fromGenesList.value;
+  applyInterestOverlay();
+}
+
+function onClearInterest() {
+  clearInterestState();
+  refreshInterestOverlay();
+}
+
 function pathwayGeneSymbols(pathwayName) {
   const seen = new Set();
   const symbols = [];
@@ -1274,6 +1513,7 @@ async function openPathwayGenes(pathwayName) {
   genesDialogMeta.textContent = "Loading genes…";
   genesDialogList.innerHTML = "";
   copyPathwayGenesButton.hidden = true;
+  if (copyInterestGenesButton) copyInterestGenesButton.hidden = true;
   genesDialog.showModal();
   try {
     await ensureGeneMembership();
@@ -1290,16 +1530,27 @@ function renderPathwayGenesDialog(pathwayName) {
     genesDialogMeta.textContent = "No gene membership for this pathway.";
     genesDialogList.innerHTML = `<p class="genes-dialog-empty">This pathway is not in the membership table.</p>`;
     copyPathwayGenesButton.hidden = true;
+    if (copyInterestGenesButton) copyInterestGenesButton.hidden = true;
     return;
   }
-  genesDialogMeta.textContent = `${records.length} gene${records.length === 1 ? "" : "s"}`;
+  const ranked = records.map((g, i) => ({ g, i, hit: geneRecordIsInterest(g) }));
+  ranked.sort((a, b) => Number(b.hit) - Number(a.hit) || a.i - b.i);
+  const hitCount = ranked.filter((row) => row.hit).length;
+  let meta = `${records.length} gene${records.length === 1 ? "" : "s"}`;
+  if (interestApplied) {
+    meta += ` · ${hitCount} of ${interestRecognized.length} genes of interest`;
+  }
+  genesDialogMeta.textContent = meta;
   copyPathwayGenesButton.hidden = false;
-  const rows = records
-    .map((g) => {
+  if (copyInterestGenesButton) copyInterestGenesButton.hidden = !interestApplied || hitCount === 0;
+  const rows = ranked
+    .map((row) => {
+      const g = row.g;
       const symbol = geneRecordSymbol(g) || geneRecordEntrez(g) || "—";
       const entrez = geneRecordEntrez(g);
       const desc = geneRecordDescription(g);
-      return `<tr><td>${escapeHtml(symbol)}</td><td>${escapeHtml(entrez)}</td><td>${escapeHtml(desc)}</td></tr>`;
+      const cls = row.hit ? ' class="is-interest"' : "";
+      return `<tr${cls}><td>${escapeHtml(symbol)}</td><td>${escapeHtml(entrez)}</td><td>${escapeHtml(desc)}</td></tr>`;
     })
     .join("");
   genesDialogList.innerHTML = `<table><thead><tr><th>Symbol</th><th>Entrez</th><th>Description</th></tr></thead><tbody>${rows}</tbody></table>`;
@@ -1942,6 +2193,7 @@ async function onReset() {
   clearError();
   closeAllGroupMenus();
   closeTissueMenu();
+  clearInterestState();
   resetGroups();
   collectionSelect.value = "";
   topNInput.value = 10;
@@ -2325,6 +2577,13 @@ function renderGraphNodeTable() {
     const tr = document.createElement("tr");
     if (row.hidden) tr.classList.add("is-hidden");
     const id = `graph-node-${i}`;
+    const hits = interestApplied ? pathwayInterestHits(row.name) : [];
+    const myGenes = interestApplied
+      ? hits.length
+        ? `${hits.length}/${interestRecognized.length}`
+        : "0"
+      : "—";
+    const myGenesClass = hits.length ? "graph-my-genes has-hits" : "graph-my-genes";
     tr.innerHTML = `<td><input id="${id}" type="checkbox"${row.hidden ? "" : " checked"}></td>
       <td class="graph-name"><label for="${id}">${escapeHtml(row.name)}</label></td>
       <td class="graph-role"><span class="graph-swatch" style="background:${cssColor(row.color, NEIGHBOR_COLOR)}"></span>${escapeHtml(row.role)}${
@@ -2332,6 +2591,7 @@ function renderGraphNodeTable() {
       }</td>
       <td class="graph-edges">${connectionsFor(row.name).length}</td>
       <td><button type="button" class="genes-view-btn">View</button></td>
+      <td class="${myGenesClass}">${myGenes}</td>
       <td><button type="button" class="links-view-btn">View</button></td>`;
     const box = tr.querySelector("input");
     box.addEventListener("change", () => setGraphNodeHidden(row.name, !box.checked));
@@ -2339,6 +2599,7 @@ function renderGraphNodeTable() {
     tr.querySelector(".links-view-btn").addEventListener("click", () => openPathwayLinks(row.name));
     graphNodeTableBody.appendChild(tr);
   });
+  updateInterestStatus();
 }
 
 // Each panel is rendered independently: one panel failing (e.g. a CDN
@@ -2527,7 +2788,10 @@ function showNodeTooltip(node) {
   if (!tip) return;
   const fullName = node.data("fullName") || node.id();
   const groupName = node.data("groupName") || "Neighbor";
-  tip.innerHTML = `<strong>${escapeHtml(fullName)}</strong>${escapeHtml(groupName)}`;
+  const extra = interestOverlayLine(fullName);
+  tip.innerHTML = `<strong>${escapeHtml(fullName)}</strong>${escapeHtml(groupName)}${
+    extra ? `<span class="cy-tooltip-interest">${escapeHtml(extra)}</span>` : ""
+  }`;
   const pos = node.renderedPosition();
   tip.style.left = `${Math.round(pos.x + 14)}px`;
   tip.style.top = `${Math.round(pos.y + 14)}px`;
@@ -2559,6 +2823,7 @@ function renderNetwork(edges) {
     const entry = pathwayByName.get(name);
     const groupInfo = groupByName.get(name);
     const added = !groupInfo && extraNames.has(name);
+    const interestCount = pathwayInterestHits(name).length;
     return {
       data: {
         id: name,
@@ -2569,7 +2834,9 @@ function renderNetwork(edges) {
         groupName: groupInfo ? groupInfo.name : added ? "Added" : "Neighbor",
         groupColor: groupInfo ? cssColor(groupInfo.color) : added ? ADDED_COLOR : null,
         collection: entry ? pathwayMetaLabel(entry) : "",
+        interestCount,
       },
+      classes: interestCount ? "interest-hit" : "",
     };
   });
   const edgeEls = edges.map((e, i) => ({
@@ -2609,6 +2876,15 @@ function renderNetwork(edges) {
           "text-valign": "bottom",
           "text-margin-y": 6,
           color: "#1a1f2b",
+          "border-width": 0,
+        },
+      },
+      {
+        selector: "node.interest-hit",
+        style: {
+          "border-width": 3,
+          "border-color": INTEREST_RING,
+          "border-opacity": 1,
         },
       },
       {
@@ -2635,9 +2911,10 @@ function renderNetwork(edges) {
     const deg = node.data("degree");
     const entry = pathwayByName.get(name);
     const collectionInfo = entry && entry.source_db ? ` · ${sourceDbLabel(entry.source_db)}` : "";
+    const interestLine = interestOverlayLine(name);
     nodeInfo.innerHTML = `${escapeHtml(name)} — ${deg} connection(s) in this view${escapeHtml(
       collectionInfo
-    )} <button type="button" class="text-btn" data-action="genes">View genes</button>
+    )}${interestLine ? ` · ${escapeHtml(interestLine)}` : ""} <button type="button" class="text-btn" data-action="genes">View genes</button>
     <button type="button" class="text-btn" data-action="links">View connections</button>`;
     const genesBtn = nodeInfo.querySelector('[data-action="genes"]');
     const linksBtn = nodeInfo.querySelector('[data-action="links"]');
@@ -2865,6 +3142,16 @@ copyPathwayGenesButton.addEventListener("click", () => {
   }
   copyText(symbols.join("\n"), copyPathwayGenesButton, "Copy genes");
 });
+if (copyInterestGenesButton) {
+  copyInterestGenesButton.addEventListener("click", () => {
+    const symbols = pathwayInterestHits(genesDialogPathway).map((h) => h.symbol).filter(Boolean);
+    if (symbols.length === 0) {
+      showError("No matching genes of interest in this pathway.");
+      return;
+    }
+    copyText(symbols.join("\n"), copyInterestGenesButton, "Copy matches");
+  });
+}
 genesDialogClose.addEventListener("click", () => genesDialog.close());
 copyPathwayLinksButton.addEventListener("click", () => {
   copyConnections(linksDialogPathway, copyPathwayLinksButton);
@@ -2908,6 +3195,9 @@ graphAddInput.addEventListener("keydown", (evt) => {
   }
 });
 graphAddButton.addEventListener("click", submitGraphAddFromInput);
+if (interestGenesApply) interestGenesApply.addEventListener("click", applyInterestOverlay);
+if (interestGenesFromLookup) interestGenesFromLookup.addEventListener("click", useFromGenesListForInterest);
+if (interestGenesClear) interestGenesClear.addEventListener("click", onClearInterest);
 el("cyZoomIn").addEventListener("click", () => zoomNetwork(1.25));
 el("cyZoomOut").addEventListener("click", () => zoomNetwork(0.8));
 el("cyFit").addEventListener("click", fitNetwork);

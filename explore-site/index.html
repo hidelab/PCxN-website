@@ -8,7 +8,7 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-dt@3.0.4/css/dataTables.dataTables.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/canvasxpress@69.6.1/src/canvasXpress.css">
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 
@@ -48,6 +48,7 @@
           <ul id="tissueList" class="tissue-menu-list" role="listbox" aria-labelledby="tissueListLabel"></ul>
         </div>
       </div>
+      <div id="tissueChipList" class="chip-list tissue-chip-list"></div>
       <p class="hint">combined is an average across all tissues.</p>
     </div>
 
@@ -162,6 +163,7 @@
         </div>
         <div id="legend" class="legend" aria-live="polite"></div>
         <p class="legend-note">Red edges are positive correlation, blue negative.</p>
+        <p id="interestLegendNote" class="legend-note" hidden>Orange ring: the pathway contains genes of interest.</p>
         <div class="graph-nodes">
           <div class="section-head">
             <h3>Pathways in this graph</h3>
@@ -171,6 +173,17 @@
             </div>
           </div>
           <p class="graph-node-note">Uncheck a row to take that node out of the graph. Check it again to put it back. Linked Pathways opens the partners it connects to in this view, with correlation and p-value. Search below to add another catalog pathway.</p>
+          <div class="interest-genes">
+            <label for="interestGenesList">Genes of interest</label>
+            <p class="hint">Paste symbols or Entrez IDs to see which of them sit in each pathway on this graph. This list is independent of From genes lookup.</p>
+            <textarea id="interestGenesList" rows="3" placeholder="One per line, or comma-separated"></textarea>
+            <div class="interest-genes-actions">
+              <button type="button" id="interestGenesApply">Apply</button>
+              <button type="button" id="interestGenesFromLookup" class="text-btn">Use From genes list</button>
+              <button type="button" id="interestGenesClear" class="text-btn">Clear</button>
+            </div>
+            <p id="interestGenesStatus" class="hint"></p>
+          </div>
           <div class="graph-add combobox">
             <label class="field-label" for="graphAddInput">Add a pathway to the graph</label>
             <div class="graph-add-row">
@@ -188,6 +201,7 @@
                   <th scope="col">Role</th>
                   <th scope="col">Edges</th>
                   <th scope="col">Genes</th>
+                  <th scope="col">My genes</th>
                   <th scope="col">Linked Pathways</th>
                 </tr>
               </thead>
@@ -256,6 +270,7 @@
   <p id="genesDialogMeta" class="hint"></p>
   <div class="genes-dialog-toolbar">
     <button type="button" id="copyPathwayGenesButton">Copy genes</button>
+    <button type="button" id="copyInterestGenesButton" hidden>Copy matches</button>
   </div>
   <div id="genesDialogList" class="genes-dialog-list"></div>
   <div class="bulk-lookup-actions">
@@ -342,6 +357,6 @@
 <script src="https://cdn.jsdelivr.net/npm/datatables.net-dt@3.0.4/js/dataTables.dataTables.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvasxpress@69.6.1/src/canvasXpress.js"></script>
 <script src="config.js"></script>
-<script src="app.js?v=12"></script>
+<script src="app.js?v=13"></script>
 </body>
 </html>

@@ -262,6 +262,8 @@ button.tissue-summary:hover {
   flex: none;
 }
 .chip-remove:hover { color: var(--error-text); background: var(--error-bg); }
+.tissue-chip-list { margin: 2px 0 0; }
+.tissue-chip-list .chip-label { text-transform: capitalize; }
 
 .hint { font-size: 0.78rem; color: var(--muted); margin: 4px 0 0; }
 .hint.warn { color: var(--error-text); }
@@ -307,6 +309,43 @@ button.tissue-summary:hover {
   font-size: 0.82rem;
   color: var(--muted);
 }
+.interest-genes {
+  margin: 0 0 14px;
+  padding: 12px 12px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-alt);
+}
+.interest-genes label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 650;
+  color: var(--text);
+}
+#interestGenesList {
+  width: 100%;
+  margin-top: 6px;
+  min-height: 4.5em;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.9rem;
+  resize: vertical;
+}
+#interestGenesList:focus {
+  outline: 2px solid #9ec4cd;
+  border-color: var(--accent);
+}
+.interest-genes-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+.interest-genes-actions .text-btn { margin-top: 0; }
+#interestGenesStatus { margin-top: 6px; }
 .graph-add { margin: 0 0 12px; }
 .graph-add-row {
   display: flex;
@@ -349,7 +388,9 @@ button.tissue-summary:hover {
   white-space: nowrap;
   color: var(--muted);
 }
-#graphNodeTable .graph-edges { white-space: nowrap; }
+#graphNodeTable .graph-edges,
+#graphNodeTable .graph-my-genes { white-space: nowrap; }
+#graphNodeTable .graph-my-genes.has-hits { font-weight: 650; color: #c2410c; }
 #graphNodeTable .graph-swatch {
   width: 8px;
   height: 8px;
@@ -589,6 +630,7 @@ section h2 { font-size: 1.05rem; margin: 0 0 8px; }
   word-break: break-word;
 }
 .cy-tooltip strong { display: block; font-weight: 600; margin-bottom: 2px; }
+.cy-tooltip-interest { display: block; margin-top: 4px; color: #fdba74; }
 
 .node-info {
   min-height: 1.4em;
@@ -670,6 +712,7 @@ section h2 { font-size: 1.05rem; margin: 0 0 8px; }
   font-weight: 600;
 }
 .genes-dialog-list tr:last-child td { border-bottom: 0; }
+.genes-dialog-list tr.is-interest td { background: #fff4e8; font-weight: 650; }
 .genes-dialog-empty { color: var(--muted); padding: 12px; }
 
 .node-info .text-btn { margin-left: 8px; }
