@@ -66,6 +66,8 @@ const linksDialogList = el("linksDialogList");
 const copyPathwayLinksButton = el("copyPathwayLinksButton");
 const linksDialogClose = el("linksDialogClose");
 const layoutSelect = el("layoutSelect");
+const classicLegendNote = el("classicLegendNote");
+const emLegendNote = el("emLegendNote");
 const fitButton = el("fitButton");
 const saveNetworkPngButton = el("saveNetworkPngButton");
 const saveHeatmapPngButton = el("saveHeatmapPngButton");
@@ -150,6 +152,7 @@ let tissueMenuItems = [];
 let tissueMenuIndex = -1;
 
 let cy = null;
+let networkStyle = "enrichmentmap";
 let dataTable = null;
 let cxChart = null;
 let hiddenGraphNames = new Set();
@@ -2194,6 +2197,8 @@ async function onReset() {
   closeAllGroupMenus();
   closeTissueMenu();
   clearInterestState();
+  setNetworkStyle("enrichmentmap", false);
+  if (layoutSelect) layoutSelect.value = "fcose";
   resetGroups();
   collectionSelect.value = "";
   topNInput.value = 10;
@@ -2677,6 +2682,61 @@ const NODE_LABEL_PREFIXES = [
   [/^PID_/, "P_"],
 ];
 
+function isEnrichmentMapStyle() {
+  return networkStyle === "enrichmentmap";
+}
+
+function applyEnrichmentMapClusterIds(cyInst) {
+  if (!cyInst || cyInst.nodes().length < 3 || cyInst.edges().empty()) return;
+  let clusters = [];
+  try {
+    clusters = cyInst.elements().markovClustering({
+      inflateFactor: 3,
+      attributes: [(edge) => Math.abs(edge.data("correlation")) || 0],
+    });
+  } catch (err) {
+    console.error("Markov clustering failed:", err);
+    return;
+  }
+  const nodeCount = cyInst.nodes().length;
+  const assigned = new Set();
+  const ranked = Array.from(clusters).sort((a, b) => b.length - a.length);
+  let idx = 0;
+  for (const cluster of ranked) {
+    const members = cluster.nodes().filter((n) => !assigned.has(n.id()));
+    if (members.length < 3) continue;
+    if (members.length >= nodeCount) continue;
+    const clusterId = idx;
+    idx += 1;
+    members.forEach((n) => {
+      assigned.add(n.id());
+      n.data("clusterId", clusterId);
+    });
+  }
+}
+
+function fcoseIdealEdgeLength(edge) {
+  if (!isEnrichmentMapStyle()) return 120;
+  const sourceCluster = edge.source().data("clusterId");
+  const targetCluster = edge.target().data("clusterId");
+  if (sourceCluster != null && sourceCluster === targetCluster) return 60;
+  return 140;
+}
+
+function updateNetworkStyleLegend() {
+  if (classicLegendNote) classicLegendNote.hidden = isEnrichmentMapStyle();
+  if (emLegendNote) emLegendNote.hidden = !isEnrichmentMapStyle();
+}
+
+function setNetworkStyle(style, rerender = true) {
+  networkStyle = style === "classic" ? "classic" : "enrichmentmap";
+  document.querySelectorAll(".style-toggle").forEach((btn) => {
+    btn.setAttribute("aria-pressed", btn.dataset.style === networkStyle ? "true" : "false");
+  });
+  updateNetworkStyleLegend();
+  if (rerender && cachedEdges) renderNetwork(currentlyVisibleEdges());
+}
+
 function formatNodeLabel(name) {
   let short = String(name || "");
   for (const [pattern, repl] of NODE_LABEL_PREFIXES) {
@@ -2689,6 +2749,22 @@ function formatNodeLabel(name) {
 function networkLayoutOptions() {
   const name = layoutSelect.value;
   const shared = { name, fit: false, animate: false, padding: 40, stop: fitNetwork };
+  if (name === "fcose") {
+    return {
+      ...shared,
+      name: typeof cytoscape !== "undefined" ? "fcose" : "cose",
+      quality: "proof",
+      randomize: true,
+      animate: false,
+      idealEdgeLength: fcoseIdealEdgeLength,
+      edgeElasticity: 0.75,
+      nodeRepulsion: () => 45000,
+      nodeDimensionsIncludeLabels: false,
+      packComponents: false,
+      gravity: 0.25,
+      nestingFactor: 0.1,
+    };
+  }
   if (name === "concentric") {
     return {
       ...shared,
@@ -2714,7 +2790,94 @@ function networkLayoutOptions() {
 }
 
 function nodeBodySize(node) {
+  if (isEnrichmentMapStyle()) {
+    const rec = membershipRecord(node.data("fullName") || node.id());
+    const size = rec && Number(rec.size) ? rec.size : node.data("degree") || 1;
+    const t = Math.min(1, Math.max(0, (Number(size) - 5) / 200));
+    return 28 + t * 8;
+  }
   return 6 + Math.min(8, node.data("degree") || 1);
+}
+
+function networkStyles() {
+  const faded = [
+    { selector: "node.faded", style: { opacity: 0.15 } },
+    { selector: "edge.faded", style: { opacity: 0.1 } },
+  ];
+  const interest = {
+    selector: "node.interest-hit",
+    style: {
+      "border-width": 3,
+      "border-color": INTEREST_RING,
+      "border-opacity": 1,
+    },
+  };
+  if (isEnrichmentMapStyle()) {
+    return [
+      {
+        selector: "node",
+        style: {
+          label: "data(label)",
+          "font-size": "10px",
+          width: nodeBodySize,
+          height: nodeBodySize,
+          "background-color": nodeColor,
+          "text-wrap": "wrap",
+          "text-max-width": "70px",
+          "text-valign": "bottom",
+          "text-halign": "center",
+          "text-margin-y": 4,
+          "text-background-color": "#ffffff",
+          "text-background-opacity": 0.7,
+          "text-background-padding": "2px",
+          "text-background-shape": "roundrectangle",
+          color: "#1a1f2b",
+          "border-width": 0,
+        },
+      },
+      {
+        selector: "edge",
+        style: {
+          width: 2.2,
+          "line-color": "data(color)",
+          "line-opacity": 0.35,
+          "curve-style": "haystack",
+          "haystack-radius": 0,
+        },
+      },
+      interest,
+      ...faded,
+    ];
+  }
+  return [
+    {
+      selector: "node",
+      style: {
+        label: "data(label)",
+        "font-size": "11px",
+        width: nodeBodySize,
+        height: nodeBodySize,
+        "background-color": nodeColor,
+        "text-wrap": "ellipsis",
+        "text-max-width": "80px",
+        "text-valign": "bottom",
+        "text-margin-y": 6,
+        color: "#1a1f2b",
+        "border-width": 0,
+      },
+    },
+    interest,
+    {
+      selector: "edge",
+      style: {
+        width: 1.6,
+        "line-color": "data(color)",
+        "curve-style": "haystack",
+        "haystack-radius": 0,
+      },
+    },
+    ...faded,
+  ];
 }
 
 function zoomNetwork(factor) {
@@ -2763,10 +2926,11 @@ function fitNetwork() {
     });
     return;
   }
-  if (layoutSelect.value === "cose") expandCompactPositions();
+  if (layoutSelect.value === "cose" && !isEnrichmentMapStyle()) expandCompactPositions();
   cy.fit(undefined, 40);
+  if (isEnrichmentMapStyle()) return;
   let maxRendered = 0;
-  cy.nodes().forEach((n) => {
+  cy.nodes().filter((n) => !n.isParent()).forEach((n) => {
     maxRendered = Math.max(maxRendered, n.renderedWidth());
   });
   const cap = 16;
@@ -2859,48 +3023,29 @@ function renderNetwork(edges) {
     }
     cy = null;
   }
+  updateNetworkStyleLegend();
   cy = cytoscape({
     container: el("cy"),
     elements: { nodes, edges: edgeEls },
-    style: [
-      {
-        selector: "node",
-        style: {
-          label: "data(label)",
-          "font-size": "11px",
-          width: nodeBodySize,
-          height: nodeBodySize,
-          "background-color": nodeColor,
-          "text-wrap": "ellipsis",
-          "text-max-width": "80px",
-          "text-valign": "bottom",
-          "text-margin-y": 6,
-          color: "#1a1f2b",
-          "border-width": 0,
-        },
-      },
-      {
-        selector: "node.interest-hit",
-        style: {
-          "border-width": 3,
-          "border-color": INTEREST_RING,
-          "border-opacity": 1,
-        },
-      },
-      {
-        selector: "edge",
-        style: {
-          width: 1.6,
-          "line-color": "data(color)",
-          "curve-style": "haystack",
-          "haystack-radius": 0,
-        },
-      },
-      { selector: "node.faded", style: { opacity: 0.15 } },
-      { selector: "edge.faded", style: { opacity: 0.1 } },
-    ],
-    layout: networkLayoutOptions(),
+    style: networkStyles(),
+    layout: { name: "preset", fit: false, animate: false },
   });
+  if (isEnrichmentMapStyle()) applyEnrichmentMapClusterIds(cy);
+  try {
+    cy.layout(networkLayoutOptions()).run();
+  } catch (err) {
+    console.error("Layout failed, falling back to cose:", err);
+    cy.layout({
+      name: "cose",
+      fit: false,
+      animate: false,
+      padding: 40,
+      stop: fitNetwork,
+      idealEdgeLength: 240,
+      nodeOverlap: 60,
+      nodeRepulsion: () => 20000,
+    }).run();
+  }
 
   cy.on("tap", "node", (evt) => {
     const node = evt.target;
@@ -3165,6 +3310,9 @@ copyLinkButton.addEventListener("click", copyShareLink);
 corrSlider.addEventListener("input", onSliderChange);
 pSlider.addEventListener("input", onSliderChange);
 layoutSelect.addEventListener("change", applyLayout);
+document.querySelectorAll(".style-toggle").forEach((btn) => {
+  btn.addEventListener("click", () => setNetworkStyle(btn.dataset.style, true));
+});
 fitButton.addEventListener("click", fitNetwork);
 graphShowAll.addEventListener("click", () => {
   hiddenGraphNames = new Set();

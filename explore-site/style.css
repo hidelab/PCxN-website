@@ -578,7 +578,29 @@ button.example-chip:hover {
 }
 section h2 { font-size: 1.05rem; margin: 0 0 8px; }
 .section-head h2 { margin: 0; }
-.network-tools { display: flex; gap: 8px; align-items: center; font-size: 0.85rem; color: var(--muted); }
+.network-tools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); }
+.network-style {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.network-style .field-label { margin-right: 2px; }
+.style-toggle {
+  margin-top: 0;
+  padding: 4px 9px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--muted);
+  font-size: 0.82rem;
+  border-radius: 6px;
+}
+.style-toggle:hover { background: var(--accent-soft); color: var(--text); }
+.style-toggle[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.style-toggle[aria-pressed="true"]:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: #fff; }
 
 .cy-wrap { position: relative; }
 #cy {
