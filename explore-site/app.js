@@ -166,7 +166,7 @@ let activeTab = "network";
 // limits") - both for fetch fan-out and for how dense/unreadable the
 // resulting network gets, since stage 2 is deliberately unfiltered by the
 // cutoffs (matching the legacy app's spec).
-const MAX_TOTAL_FETCHES = 60;
+const MAX_TOTAL_FETCHES = 100;
 
 // Node colors for group 1, 2, 3, ... (cycles if you add more groups than
 // this has entries). Deliberately avoids the neighbor blue (#2563eb, see

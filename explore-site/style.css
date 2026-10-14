@@ -153,7 +153,7 @@ button.tissue-summary:hover {
 }
 .tissue-menu-list { margin: 0; padding: 0; list-style: none; }
 .tissue-menu-list .combo-name { text-transform: capitalize; }
-.field-row input, .field-row select, .network-tools select, .group-pathway-input {
+.field-row input:not([type="range"]), .field-row select, .network-tools select, .group-pathway-input {
   padding: 7px 9px;
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -163,7 +163,7 @@ button.tissue-summary:hover {
   color: var(--text);
 }
 .group-pathway-input { width: 100%; }
-.field-row input:focus, .field-row select:focus, .network-tools select:focus,
+.field-row input:not([type="range"]):focus, .field-row select:focus, .network-tools select:focus,
 .group-pathway-input:focus, .tissue-filter:focus {
   outline: 2px solid #9ec4cd;
   border-color: var(--accent);
@@ -566,8 +566,65 @@ button.example-chip:hover {
   margin-bottom: 16px;
   font-size: 0.9rem;
 }
-#live-filters .field-row { flex-direction: row; align-items: center; gap: 8px; }
-#live-filters input[type=range] { width: 200px; }
+#live-filters .field-row { flex-direction: row; align-items: center; gap: 8px; flex-shrink: 0; }
+#live-filters input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  position: static;
+  z-index: auto;
+  opacity: 1;
+  pointer-events: auto;
+  width: 160px;
+  flex: 0 0 160px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+#live-filters input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: #d7d0c6;
+}
+#live-filters input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: all;
+  width: 16px;
+  height: 16px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px var(--accent);
+  cursor: pointer;
+}
+#live-filters input[type="range"]::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: #d7d0c6;
+  border: 0;
+}
+#live-filters input[type="range"]::-moz-range-thumb {
+  pointer-events: all;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+  cursor: pointer;
+}
+#live-filters input[type="range"]:focus {
+  outline: none;
+}
+#live-filters input[type="range"]:focus-visible {
+  outline: 2px solid #9ec4cd;
+  outline-offset: 3px;
+}
 
 .section-head {
   display: flex;

@@ -45,7 +45,7 @@
       <li>Share a result: the URL keeps tissue, groups, pathways, and cutoffs.</li>
     </ul>
     <p>Correlation is Pearson-style pathway co-activity (<code>r</code>). Red edges are positive, blue negative; color intensity follows <code>|r|</code>. Node size is degree in the current graph. Sliders re-filter without another fetch.</p>
-    <p>A query is capped at <strong>60 slice fetches</strong>: <code>tissues × (selected pathways + topN) ≤ 60</code>. Lower topN, fewer tissues, or fewer seeds if you hit the limit. TopN <code>0</code> draws only edges among the selected pathways (used by the two-group comparison example).</p>
+    <p>A query is capped at <strong>100 slice fetches</strong>: <code>tissues × (selected pathways + topN) ≤ 100</code>. Lower topN, fewer tissues, or fewer seeds if you hit the limit. TopN <code>0</code> draws only edges among the selected pathways (used by the two-group comparison example).</p>
 
     <h2>Data</h2>
     <table>
