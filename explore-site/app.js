@@ -1966,23 +1966,42 @@ function renderResultMeta(selectedCount, groupCount, neighborCount, edgeCount) {
   resultMeta.textContent = `${selectedCount} pathway(s) across ${groupCount} group(s) + ${neighborCount} neighbor(s), ${edgeCount} edges`;
 }
 
+function networkLegendItems() {
+  const items = [];
+  if (lastQuery) {
+    for (const g of lastQuery.groups) {
+      if (!g.pathways.length) continue;
+      const name = g.name && String(g.name).trim() ? String(g.name).trim() : "Group";
+      items.push({ color: cssColor(g.color, NEIGHBOR_COLOR), label: name });
+    }
+  }
+  items.push({ color: NEIGHBOR_COLOR, label: "Neighbor" });
+  const extras = activeTissueCache() && activeTissueCache().extraNames ? activeTissueCache().extraNames : [];
+  if (extras.length) items.push({ color: ADDED_COLOR, label: "Added" });
+  return items;
+}
+
+function networkLegendNotes() {
+  const notes = [];
+  for (const node of [classicLegendNote, emLegendNote, interestLegendNote]) {
+    if (!node || node.hidden) continue;
+    const text = String(node.textContent || "")
+      .replace(/\s*Click a node to highlight its neighbors\.?/i, "")
+      .trim();
+    if (text) notes.push(text);
+  }
+  return notes;
+}
+
 function renderLegend() {
   if (!lastQuery) {
     legendEl.innerHTML = "";
     return;
   }
-  const items = [];
-  for (const g of lastQuery.groups) {
-    if (g.pathways.length === 0) continue;
-    items.push(
-      `<li><span class="legend-swatch" style="background:${cssColor(g.color)}"></span>${escapeHtml(g.name)}</li>`
-    );
-  }
-  items.push(`<li><span class="legend-swatch" style="background:${NEIGHBOR_COLOR}"></span>Neighbor</li>`);
-  const extras = activeTissueCache() && activeTissueCache().extraNames ? activeTissueCache().extraNames : [];
-  if (extras.length) {
-    items.push(`<li><span class="legend-swatch" style="background:${ADDED_COLOR}"></span>Added</li>`);
-  }
+  const items = networkLegendItems().map(
+    (item) =>
+      `<li><span class="legend-swatch" style="background:${cssColor(item.color)}"></span>${escapeHtml(item.label)}</li>`
+  );
   legendEl.innerHTML = `<ul class="legend-list">${items.join("")}</ul>`;
 }
 
@@ -3128,6 +3147,98 @@ function figureFilename(kind) {
   return `pcxn_${kind}_${tissue}_${Date.now()}.png`;
 }
 
+function wrapCanvasText(ctx, text, maxWidth) {
+  const words = String(text || "").split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = "";
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word;
+    if (line && ctx.measureText(test).width > maxWidth) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+function composeNetworkPngWithLegend(graphSource) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const objectUrl = typeof graphSource === "string" ? "" : URL.createObjectURL(graphSource);
+    img.onload = () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      const scale = 2;
+      const pad = 24 * scale;
+      const swatch = 11 * scale;
+      const rowH = 22 * scale;
+      const gap = 18 * scale;
+      const noteLineH = 18 * scale;
+      const bg = "#fffdf8";
+      const muted = "#6b645b";
+      const font = `"Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif`;
+      const items = networkLegendItems();
+      const notes = networkLegendNotes();
+      const measure = document.createElement("canvas").getContext("2d");
+      measure.font = `600 ${13 * scale}px ${font}`;
+      const contentW = Math.max(img.width, 420 * scale);
+      const maxText = contentW - pad * 2;
+      const laid = [];
+      let x = pad;
+      let y = 0;
+      for (const item of items) {
+        const w = swatch + 8 * scale + measure.measureText(item.label).width;
+        if (x > pad && x + w > contentW - pad) {
+          x = pad;
+          y += rowH;
+        }
+        laid.push({ ...item, x, y });
+        x += w + gap;
+      }
+      const legendH = items.length ? y + rowH : 0;
+      measure.font = `${12 * scale}px ${font}`;
+      const noteLines = notes.flatMap((note) => wrapCanvasText(measure, note, maxText));
+      const notesH = noteLines.length ? 8 * scale + noteLines.length * noteLineH : 0;
+      const footerH = pad + legendH + notesH + pad;
+      const canvas = document.createElement("canvas");
+      canvas.width = contentW;
+      canvas.height = img.height + footerH;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, Math.round((contentW - img.width) / 2), 0);
+      const baseY = img.height + pad;
+      ctx.font = `600 ${13 * scale}px ${font}`;
+      ctx.textBaseline = "middle";
+      for (const item of laid) {
+        const midY = baseY + item.y + rowH / 2;
+        ctx.beginPath();
+        ctx.fillStyle = item.color;
+        ctx.arc(item.x + swatch / 2, midY, swatch / 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = muted;
+        ctx.fillText(item.label, item.x + swatch + 8 * scale, midY);
+      }
+      ctx.font = `${12 * scale}px ${font}`;
+      ctx.textBaseline = "top";
+      ctx.fillStyle = muted;
+      let ny = baseY + legendH + 8 * scale;
+      for (const line of noteLines) {
+        ctx.fillText(line, pad, ny);
+        ny += noteLineH;
+      }
+      resolve(canvas.toDataURL("image/png"));
+    };
+    img.onerror = () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      reject(new Error("Could not read the network image."));
+    };
+    img.src = objectUrl || graphSource;
+  });
+}
+
 function saveNetworkPng() {
   if (!isCyLive() || cy.elements().empty()) {
     showError("No network to save.");
@@ -3143,18 +3254,10 @@ function saveNetworkPng() {
   });
   Promise.resolve(png)
     .then((blob) => {
-      if (!blob) {
-        showError("Could not save the network image.");
-        return;
-      }
-      if (typeof blob === "string") {
-        downloadHref(blob, figureFilename("network"));
-        return;
-      }
-      const url = URL.createObjectURL(blob);
-      downloadHref(url, figureFilename("network"));
-      setTimeout(() => URL.revokeObjectURL(url), 1500);
+      if (!blob) throw new Error("empty image");
+      return composeNetworkPngWithLegend(blob);
     })
+    .then((href) => downloadHref(href, figureFilename("network")))
     .catch((err) => {
       showError(`Could not save the network image. ${err && err.message ? err.message : err}`);
     });
