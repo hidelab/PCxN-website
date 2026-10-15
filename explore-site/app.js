@@ -68,6 +68,7 @@ const linksDialogClose = el("linksDialogClose");
 const layoutSelect = el("layoutSelect");
 const classicLegendNote = el("classicLegendNote");
 const emLegendNote = el("emLegendNote");
+const hubmapLegendNote = el("hubmapLegendNote");
 const fitButton = el("fitButton");
 const saveNetworkPngButton = el("saveNetworkPngButton");
 const saveHeatmapPngButton = el("saveHeatmapPngButton");
@@ -166,7 +167,7 @@ let activeTab = "network";
 // limits") - both for fetch fan-out and for how dense/unreadable the
 // resulting network gets, since stage 2 is deliberately unfiltered by the
 // cutoffs (matching the legacy app's spec).
-const MAX_TOTAL_FETCHES = 100;
+const MAX_TOTAL_FETCHES = 300;
 
 // Node colors for group 1, 2, 3, ... (cycles if you add more groups than
 // this has entries). Deliberately avoids the neighbor blue (#2563eb, see
@@ -1400,6 +1401,10 @@ function applyInterestNodeClasses() {
   if (!isCyLive()) return;
   cy.batch(() => {
     cy.nodes().forEach((node) => {
+      if (isClusterLabelNode(node)) {
+        node.removeClass("interest-hit");
+        return;
+      }
       const name = node.data("fullName") || node.id();
       const hits = pathwayInterestHits(name);
       node.data("interestCount", hits.length);
@@ -1983,10 +1988,10 @@ function networkLegendItems() {
 
 function networkLegendNotes() {
   const notes = [];
-  for (const node of [classicLegendNote, emLegendNote, interestLegendNote]) {
+  for (const node of [classicLegendNote, emLegendNote, hubmapLegendNote, interestLegendNote]) {
     if (!node || node.hidden) continue;
     const text = String(node.textContent || "")
-      .replace(/\s*Click a node to highlight its neighbors\.?/i, "")
+      .replace(/\s*Click a node(?: or a table row)? to highlight(?: its)? neighbors\.?/i, "")
       .trim();
     if (text) notes.push(text);
   }
@@ -2608,8 +2613,13 @@ function renderGraphNodeTable() {
         : "0"
       : "—";
     const myGenesClass = hits.length ? "graph-my-genes has-hits" : "graph-my-genes";
-    tr.innerHTML = `<td><input id="${id}" type="checkbox"${row.hidden ? "" : " checked"}></td>
-      <td class="graph-name"><label for="${id}">${escapeHtml(row.name)}</label></td>
+    tr.dataset.pathway = row.name;
+    tr.innerHTML = `<td><input id="${id}" type="checkbox"${row.hidden ? "" : " checked"} aria-label="Show ${escapeHtml(
+      row.name
+    )} in graph"></td>
+      <td class="graph-name"><button type="button" class="pathway-link graph-select-btn">${escapeHtml(
+        row.name
+      )}</button></td>
       <td class="graph-role"><span class="graph-swatch" style="background:${cssColor(row.color, NEIGHBOR_COLOR)}"></span>${escapeHtml(row.role)}${
         row.collection ? ` · ${escapeHtml(row.collection)}` : ""
       }</td>
@@ -2619,6 +2629,7 @@ function renderGraphNodeTable() {
       <td><button type="button" class="links-view-btn">View</button></td>`;
     const box = tr.querySelector("input");
     box.addEventListener("change", () => setGraphNodeHidden(row.name, !box.checked));
+    tr.querySelector(".graph-select-btn").addEventListener("click", () => selectNetworkNodeByName(row.name));
     tr.querySelector(".genes-view-btn").addEventListener("click", () => openPathwayGenes(row.name));
     tr.querySelector(".links-view-btn").addEventListener("click", () => openPathwayLinks(row.name));
     graphNodeTableBody.appendChild(tr);
@@ -2705,6 +2716,71 @@ function isEnrichmentMapStyle() {
   return networkStyle === "enrichmentmap";
 }
 
+function isHubMapStyle() {
+  return networkStyle === "hubmap";
+}
+
+function usesMapNodeStyle() {
+  return isEnrichmentMapStyle() || isHubMapStyle();
+}
+
+function isClusterLabelNode(node) {
+  return Boolean(node && (node.hasClass("cluster-label") || node.data("role") === "cluster-label"));
+}
+
+const CLUSTER_STOPWORDS = new Set([
+  "pathway",
+  "pathways",
+  "signaling",
+  "signalling",
+  "of",
+  "and",
+  "in",
+  "to",
+  "the",
+  "a",
+  "an",
+  "or",
+  "on",
+  "at",
+  "by",
+  "from",
+  "for",
+  "with",
+  "via",
+  "into",
+  "kegg",
+  "reactome",
+  "pid",
+  "wp",
+  "biocarta",
+  "wikipathways",
+  "medicus",
+  "reference",
+]);
+
+function clusterLabelTokens(name) {
+  return String(name || "")
+    .replace(/^Pathway\./, "")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((t) => t.length > 1 && !CLUSTER_STOPWORDS.has(t) && !/^\d+$/.test(t));
+}
+
+function clusterTitle(names) {
+  const counts = new Map();
+  for (const name of names) {
+    for (const token of clusterLabelTokens(name)) {
+      counts.set(token, (counts.get(token) || 0) + 1);
+    }
+  }
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, 3)
+    .map(([token]) => token)
+    .join(" ");
+}
+
 function applyEnrichmentMapClusterIds(cyInst) {
   if (!cyInst || cyInst.nodes().length < 3 || cyInst.edges().empty()) return;
   let clusters = [];
@@ -2717,38 +2793,90 @@ function applyEnrichmentMapClusterIds(cyInst) {
     console.error("Markov clustering failed:", err);
     return;
   }
-  const nodeCount = cyInst.nodes().length;
+  const nodeCount = cyInst.nodes().filter((n) => !isClusterLabelNode(n)).length;
   const assigned = new Set();
   const ranked = Array.from(clusters).sort((a, b) => b.length - a.length);
   let idx = 0;
   for (const cluster of ranked) {
-    const members = cluster.nodes().filter((n) => !assigned.has(n.id()));
+    const members = cluster.nodes().filter((n) => !isClusterLabelNode(n) && !assigned.has(n.id()));
     if (members.length < 3) continue;
     if (members.length >= nodeCount) continue;
     const clusterId = idx;
+    const label = clusterTitle(members.map((n) => n.data("fullName") || n.id())) || `cluster ${idx + 1}`;
     idx += 1;
     members.forEach((n) => {
       assigned.add(n.id());
       n.data("clusterId", clusterId);
+      n.data("clusterLabel", label);
     });
   }
 }
 
+function removeHubMapClusterLabels(cyInst) {
+  if (!cyInst) return;
+  cyInst.nodes(".cluster-label").remove();
+}
+
+function placeHubMapClusterLabels(cyInst) {
+  if (!cyInst || !isHubMapStyle()) return;
+  removeHubMapClusterLabels(cyInst);
+  const groups = new Map();
+  cyInst.nodes().forEach((n) => {
+    if (isClusterLabelNode(n)) return;
+    const clusterId = n.data("clusterId");
+    if (clusterId == null) return;
+    if (!groups.has(clusterId)) groups.set(clusterId, []);
+    groups.get(clusterId).push(n);
+  });
+  groups.forEach((members, clusterId) => {
+    if (members.length < 3) return;
+    let x = 0;
+    let y = 0;
+    members.forEach((n) => {
+      const p = n.position();
+      x += p.x;
+      y += p.y;
+    });
+    const label = members[0].data("clusterLabel") || `cluster ${clusterId + 1}`;
+    cyInst.add({
+      group: "nodes",
+      data: {
+        id: `__cluster_label_${clusterId}`,
+        label,
+        fullName: label,
+        role: "cluster-label",
+        groupName: "Cluster",
+      },
+      classes: "cluster-label",
+      position: { x: x / members.length, y: y / members.length },
+      selectable: false,
+      grabbable: false,
+    });
+  });
+}
+
+function afterNetworkLayout() {
+  if (isHubMapStyle()) placeHubMapClusterLabels(cy);
+  fitNetwork();
+}
+
 function fcoseIdealEdgeLength(edge) {
-  if (!isEnrichmentMapStyle()) return 120;
+  if (!usesMapNodeStyle()) return 120;
   const sourceCluster = edge.source().data("clusterId");
   const targetCluster = edge.target().data("clusterId");
-  if (sourceCluster != null && sourceCluster === targetCluster) return 60;
-  return 140;
+  const intra = sourceCluster != null && sourceCluster === targetCluster;
+  if (isHubMapStyle()) return intra ? 40 : 180;
+  return intra ? 60 : 140;
 }
 
 function updateNetworkStyleLegend() {
-  if (classicLegendNote) classicLegendNote.hidden = isEnrichmentMapStyle();
+  if (classicLegendNote) classicLegendNote.hidden = true;
   if (emLegendNote) emLegendNote.hidden = !isEnrichmentMapStyle();
+  if (hubmapLegendNote) hubmapLegendNote.hidden = !isHubMapStyle();
 }
 
 function setNetworkStyle(style, rerender = true) {
-  networkStyle = style === "classic" ? "classic" : "enrichmentmap";
+  networkStyle = style === "hubmap" ? "hubmap" : "enrichmentmap";
   document.querySelectorAll(".style-toggle").forEach((btn) => {
     btn.setAttribute("aria-pressed", btn.dataset.style === networkStyle ? "true" : "false");
   });
@@ -2767,7 +2895,7 @@ function formatNodeLabel(name) {
 
 function networkLayoutOptions() {
   const name = layoutSelect.value;
-  const shared = { name, fit: false, animate: false, padding: 40, stop: fitNetwork };
+  const shared = { name, fit: false, animate: false, padding: 40, stop: afterNetworkLayout };
   if (name === "fcose") {
     return {
       ...shared,
@@ -2809,7 +2937,8 @@ function networkLayoutOptions() {
 }
 
 function nodeBodySize(node) {
-  if (isEnrichmentMapStyle()) {
+  if (isClusterLabelNode(node)) return 1;
+  if (usesMapNodeStyle()) {
     const rec = membershipRecord(node.data("fullName") || node.id());
     const size = rec && Number(rec.size) ? rec.size : node.data("degree") || 1;
     const t = Math.min(1, Math.max(0, (Number(size) - 5) / 200));
@@ -2831,7 +2960,7 @@ function networkStyles() {
       "border-opacity": 1,
     },
   };
-  if (isEnrichmentMapStyle()) {
+  if (usesMapNodeStyle()) {
     return [
       {
         selector: "node",
@@ -2852,6 +2981,31 @@ function networkStyles() {
           "text-background-shape": "roundrectangle",
           color: "#1a1f2b",
           "border-width": 0,
+        },
+      },
+      {
+        selector: "node.cluster-label",
+        style: {
+          shape: "round-rectangle",
+          width: "label",
+          height: "label",
+          padding: 7,
+          "background-color": "#ffffff",
+          "background-opacity": 0.92,
+          "border-width": 1,
+          "border-color": "#6ba3c1",
+          "border-opacity": 0.85,
+          label: "data(label)",
+          "font-size": "11px",
+          "font-weight": 700,
+          color: "#1b4d5c",
+          "text-valign": "center",
+          "text-halign": "center",
+          "text-wrap": "wrap",
+          "text-max-width": "110px",
+          "text-background-opacity": 0,
+          events: "no",
+          "z-index": 20,
         },
       },
       {
@@ -2945,11 +3099,11 @@ function fitNetwork() {
     });
     return;
   }
-  if (layoutSelect.value === "cose" && !isEnrichmentMapStyle()) expandCompactPositions();
+  if (layoutSelect.value === "cose" && !usesMapNodeStyle()) expandCompactPositions();
   cy.fit(undefined, 40);
-  if (isEnrichmentMapStyle()) return;
+  if (usesMapNodeStyle()) return;
   let maxRendered = 0;
-  cy.nodes().filter((n) => !n.isParent()).forEach((n) => {
+  cy.nodes().filter((n) => !n.isParent() && !isClusterLabelNode(n)).forEach((n) => {
     maxRendered = Math.max(maxRendered, n.renderedWidth());
   });
   const cap = 16;
@@ -2968,7 +3122,7 @@ function hideNodeTooltip() {
 
 function showNodeTooltip(node) {
   const tip = el("cyTooltip");
-  if (!tip) return;
+  if (!tip || isClusterLabelNode(node)) return;
   const fullName = node.data("fullName") || node.id();
   const groupName = node.data("groupName") || "Neighbor";
   const extra = interestOverlayLine(fullName);
@@ -2981,8 +3135,53 @@ function showNodeTooltip(node) {
   tip.hidden = false;
 }
 
+function markGraphTableSelection(name) {
+  if (!graphNodeTableBody) return;
+  graphNodeTableBody.querySelectorAll("tr").forEach((tr) => {
+    tr.classList.toggle("is-selected", Boolean(name) && tr.dataset.pathway === name);
+  });
+}
+
+function selectNetworkNode(node) {
+  if (!isCyLive() || !node || node.empty() || isClusterLabelNode(node)) return;
+  const neighborhood = node.closedNeighborhood();
+  cy.elements().addClass("faded");
+  neighborhood.removeClass("faded");
+  const name = node.data("fullName") || node.id();
+  const deg = node.data("degree");
+  const entry = pathwayByName.get(name);
+  const collectionInfo = entry && entry.source_db ? ` · ${sourceDbLabel(entry.source_db)}` : "";
+  const interestLine = interestOverlayLine(name);
+  nodeInfo.innerHTML = `${escapeHtml(name)} — ${deg} connection(s) in this view${escapeHtml(
+    collectionInfo
+  )}${interestLine ? ` · ${escapeHtml(interestLine)}` : ""} <button type="button" class="text-btn" data-action="genes">View genes</button>
+    <button type="button" class="text-btn" data-action="links">View connections</button>`;
+  const genesBtn = nodeInfo.querySelector('[data-action="genes"]');
+  const linksBtn = nodeInfo.querySelector('[data-action="links"]');
+  if (genesBtn) genesBtn.addEventListener("click", () => openPathwayGenes(name));
+  if (linksBtn) linksBtn.addEventListener("click", () => openPathwayLinks(name));
+  markGraphTableSelection(name);
+  showNodeTooltip(node);
+  try {
+    cy.center(node);
+  } catch {
+    // Ignore if the viewport is not ready.
+  }
+}
+
+function selectNetworkNodeByName(name) {
+  if (!isCyLive() || !name) return;
+  const node = cy.getElementById(name);
+  if (!node || node.empty()) {
+    showError(`${name} is not in the current network. Check the row to show it.`);
+    return;
+  }
+  selectNetworkNode(node);
+}
+
 function applyLayout() {
   if (!isCyLive()) return;
+  removeHubMapClusterLabels(cy);
   cy.layout(networkLayoutOptions()).run();
 }
 
@@ -3049,7 +3248,7 @@ function renderNetwork(edges) {
     style: networkStyles(),
     layout: { name: "preset", fit: false, animate: false },
   });
-  if (isEnrichmentMapStyle()) applyEnrichmentMapClusterIds(cy);
+  if (usesMapNodeStyle()) applyEnrichmentMapClusterIds(cy);
   try {
     cy.layout(networkLayoutOptions()).run();
   } catch (err) {
@@ -3059,7 +3258,7 @@ function renderNetwork(edges) {
       fit: false,
       animate: false,
       padding: 40,
-      stop: fitNetwork,
+      stop: afterNetworkLayout,
       idealEdgeLength: 240,
       nodeOverlap: 60,
       nodeRepulsion: () => 20000,
@@ -3067,30 +3266,14 @@ function renderNetwork(edges) {
   }
 
   cy.on("tap", "node", (evt) => {
-    const node = evt.target;
-    const neighborhood = node.closedNeighborhood();
-    cy.elements().addClass("faded");
-    neighborhood.removeClass("faded");
-    const name = node.data("fullName") || node.id();
-    const deg = node.data("degree");
-    const entry = pathwayByName.get(name);
-    const collectionInfo = entry && entry.source_db ? ` · ${sourceDbLabel(entry.source_db)}` : "";
-    const interestLine = interestOverlayLine(name);
-    nodeInfo.innerHTML = `${escapeHtml(name)} — ${deg} connection(s) in this view${escapeHtml(
-      collectionInfo
-    )}${interestLine ? ` · ${escapeHtml(interestLine)}` : ""} <button type="button" class="text-btn" data-action="genes">View genes</button>
-    <button type="button" class="text-btn" data-action="links">View connections</button>`;
-    const genesBtn = nodeInfo.querySelector('[data-action="genes"]');
-    const linksBtn = nodeInfo.querySelector('[data-action="links"]');
-    if (genesBtn) genesBtn.addEventListener("click", () => openPathwayGenes(name));
-    if (linksBtn) linksBtn.addEventListener("click", () => openPathwayLinks(name));
-    showNodeTooltip(node);
+    selectNetworkNode(evt.target);
   });
   cy.on("tap", (evt) => {
     if (evt.target === cy) {
       cy.elements().removeClass("faded");
       nodeInfo.textContent = "";
       hideNodeTooltip();
+      markGraphTableSelection(null);
     }
   });
   cy.on("mouseover", "node", (evt) => {

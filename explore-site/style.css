@@ -383,7 +383,9 @@ button.tissue-summary:hover {
 }
 #graphNodeTable tr:last-child td { border-bottom: 0; }
 #graphNodeTable tr.is-hidden td { color: var(--muted); }
+#graphNodeTable tr.is-selected td { background: var(--accent-soft); }
 #graphNodeTable .graph-name { word-break: break-word; }
+#graphNodeTable .graph-select-btn { text-align: left; }
 #graphNodeTable .graph-role {
   white-space: nowrap;
   color: var(--muted);
