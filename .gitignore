@@ -18,3 +18,10 @@ __pycache__/
 .venv/
 venv/
 *.egg-info/
+
+explore-site-simple/
+explore-site.zip
+output/
+gene_membership.json
+
+.Rhistory

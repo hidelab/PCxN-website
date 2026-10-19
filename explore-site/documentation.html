@@ -44,7 +44,7 @@
       <li>Hide or add nodes from the graph table, view <strong>genes</strong> in a pathway, and view <strong>linked pathways</strong> with correlation and p-value.</li>
       <li>Share a result: the URL keeps tissue, groups, pathways, and cutoffs.</li>
     </ul>
-    <p>Correlation is Pearson-style pathway co-activity (<code>r</code>). Red edges are positive, blue negative; color intensity follows <code>|r|</code>. Node size is degree in the current graph. Sliders re-filter without another fetch.</p>
+    <p>Correlation is Pearson-style pathway co-activity (<code>r</code>). Red edges are positive, blue negative; color intensity follows <code>|r|</code>. Node size is degree in the current graph. Sliders re-filter without another fetch. A <strong>single-pathway</strong> query automatically lowers the correlation cutoff when fewer than Top N statistically significant partners exist, and shows a dismissible banner on the network.</p>
     <p>A query is capped at <strong>300 slice fetches</strong>: <code>tissues × (selected pathways + topN) ≤ 300</code>. Lower topN, fewer tissues, or fewer seeds if you hit the limit. TopN <code>0</code> draws only edges among the selected pathways (used by the two-group comparison example).</p>
 
     <h2>Data</h2>
@@ -94,7 +94,7 @@ python3 -m http.server 8000</code></pre>
     <h2>About</h2>
     <p>The question this tool answers: which pathways correlate with the one you are studying?</p>
     <p>PCxN Explore rebuilds the old "top N neighbors" view as static files. Add one or more pathways to one or more groups, then Build network — the page fetches each selected pathway's slice, ranks their combined topN neighbors, and draws the induced graph. Nodes are colored by which group they came from; discovered neighbors are blue.</p>
-    <p>Sliders re-filter the current result without another fetch. Click a node to highlight its neighborhood. The URL keeps the query (including every group and pathway) so you can send someone the same neighborhood.</p>
+    <p>Sliders re-filter the current result without another fetch. A single-pathway query will lower the correlation cutoff if fewer than Top N significant partners exist, and show a banner on the network. Click a node to highlight its neighborhood. The URL keeps the query (including every group and pathway) so you can send someone the same neighborhood.</p>
     <button type="submit" value="close">Close</button>
   </form>
 </dialog>

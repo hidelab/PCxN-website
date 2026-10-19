@@ -8,7 +8,7 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-dt@3.0.4/css/dataTables.dataTables.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/canvasxpress@69.6.1/src/canvasXpress.css">
-<link rel="stylesheet" href="style.css?v=9">
+<link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
 
@@ -164,6 +164,11 @@
             <button type="button" id="cyZoomOut" aria-label="Zoom out">−</button>
             <button type="button" id="cyFit" aria-label="Fit to view">⛶</button>
           </div>
+          <div id="thresholdBanner" class="threshold-banner" hidden>
+            <span class="threshold-banner-icon" aria-hidden="true">i</span>
+            <p id="thresholdBannerText" role="status"></p>
+            <button type="button" id="thresholdBannerClose" aria-label="Dismiss notification">×</button>
+          </div>
           <div id="cy"></div>
           <div id="cyTooltip" class="cy-tooltip" hidden></div>
         </div>
@@ -268,7 +273,7 @@
     <h2>About</h2>
     <p>The question this tool answers: which pathways correlate with the one you are studying?</p>
     <p>PCxN Explore rebuilds the old "top N neighbors" view as static files. Add one or more pathways to one or more groups, then Build network — the page fetches each selected pathway's slice, ranks their combined topN neighbors, and draws the induced graph. Nodes are colored by which group they came from; discovered neighbors are blue.</p>
-    <p>Sliders re-filter the current result without another fetch. Click a node to highlight its neighborhood. The URL keeps the query (including every group and pathway) so you can send someone the same neighborhood.</p>
+    <p>Sliders re-filter the current result without another fetch. A single-pathway query will lower the correlation cutoff if fewer than Top N significant partners exist, and show a banner on the network. Click a node to highlight its neighborhood. The URL keeps the query (including every group and pathway) so you can send someone the same neighborhood.</p>
     <button type="submit" value="close">Close</button>
   </form>
 </dialog>
@@ -368,6 +373,6 @@
 <script src="https://cdn.jsdelivr.net/npm/datatables.net-dt@3.0.4/js/dataTables.dataTables.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvasxpress@69.6.1/src/canvasXpress.js"></script>
 <script src="config.js"></script>
-<script src="app.js?v=21"></script>
+<script src="app.js?v=22"></script>
 </body>
 </html>

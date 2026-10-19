@@ -48,6 +48,9 @@ const networkSection = el("network-section");
 const heatmapSection = el("heatmap-section");
 const tableSection = el("table-section");
 const nodeInfo = el("node-info");
+const thresholdBanner = el("thresholdBanner");
+const thresholdBannerText = el("thresholdBannerText");
+const thresholdBannerClose = el("thresholdBannerClose");
 const legendEl = el("legend");
 const exportCsvButton = el("exportCsvButton");
 const copyPathwaysButton = el("copyPathwaysButton");
@@ -146,6 +149,7 @@ let pvalueMode = "raw";
 let lastQuery = null; // {groupByName, groups: [{id,name,color,pathways:[name,...]}], corrCutOff, pCutOff}
 let cachedEdges = null; // unfiltered induced-subgraph edges for the active tissue
 let cachedMaxAbsCorr = 0;
+let corrManuallyAdjusted = false;
 let tissueResults = {}; // tissue_id -> {status, edges, neighborNames, failedQueryNames, failedNames, maxAbsCorr, errorMessage}
 let activeTissueId = null;
 let selectedTissues = []; // tissue_id[] in tissues_index order
@@ -585,6 +589,114 @@ function formatMetric(value) {
 }
 function formatCorrelation(value) {
   return typeof value === "number" ? value.toFixed(3) : String(value);
+}
+
+function floorCorr(value) {
+  return Math.floor(Math.abs(Number(value) || 0) * 100) / 100;
+}
+
+function formatCorrCutoff(value) {
+  return Number(value).toFixed(2);
+}
+
+function defaultThresholdMeta(corrCutOff) {
+  const requested = Number(corrCutOff) || 0;
+  return {
+    requestedCorr: requested,
+    effectiveCorr: requested,
+    relaxed: false,
+    inclusive: false,
+    message: "",
+    kind: "ok",
+  };
+}
+
+function hideThresholdBanner() {
+  if (!thresholdBanner) return;
+  thresholdBanner.hidden = true;
+  thresholdBanner.classList.remove("is-error");
+  if (thresholdBannerText) thresholdBannerText.textContent = "";
+}
+
+function showThresholdBanner(message, kind) {
+  if (!thresholdBanner || !thresholdBannerText) return;
+  if (!message) {
+    hideThresholdBanner();
+    return;
+  }
+  thresholdBannerText.textContent = message;
+  thresholdBanner.classList.toggle("is-error", kind === "none");
+  thresholdBanner.hidden = false;
+}
+
+function syncCorrControls(value, writeUrl = true) {
+  const n = Number(value);
+  const str = Number.isFinite(n) ? String(n) : "0";
+  corrCutoffInput.value = str;
+  if (Number(corrSlider.max) < n) corrSlider.max = n;
+  corrSlider.value = str;
+  updateSliderLabels();
+  if (writeUrl) writeUrlState();
+}
+
+function applyThresholdUi(cache) {
+  if (!cache || cache.status === "error") {
+    hideThresholdBanner();
+    return;
+  }
+  if (!corrManuallyAdjusted && cache.effectiveCorr != null) {
+    syncCorrControls(cache.effectiveCorr);
+  }
+  if (cache.thresholdMessage) showThresholdBanner(cache.thresholdMessage, cache.thresholdKind);
+  else hideThresholdBanner();
+}
+
+function resolveDynamicThreshold(sigEdges, { corrCutoff, pCutoff, topN, tissueId }) {
+  const requested = Number(corrCutoff) || 0;
+  const p = Number(pCutoff);
+  const n = Math.max(0, parseInt(topN, 10) || 0);
+  const tissue = tissueId || "this tissue";
+  const pLabel = Number.isFinite(p) ? String(p) : "the cutoff";
+  const base = defaultThresholdMeta(requested);
+  if (n <= 0) {
+    return { ...base, edges: sigEdges.filter((e) => Math.abs(e.correlation) > requested) };
+  }
+  const meeting = sigEdges.filter((e) => Math.abs(e.correlation) > requested);
+  if (meeting.length >= n) {
+    return { ...base, edges: meeting.slice(0, n) };
+  }
+  if (sigEdges.length >= n) {
+    const taken = sigEdges.slice(0, n);
+    const effectiveCorr = floorCorr(taken[n - 1].correlation);
+    return {
+      edges: taken,
+      requestedCorr: requested,
+      effectiveCorr,
+      relaxed: true,
+      inclusive: true,
+      kind: "lowered",
+      message: `Correlation threshold automatically lowered from ${formatCorrCutoff(requested)} to ${formatCorrCutoff(effectiveCorr)} to display top ${n} correlating pathways.`,
+    };
+  }
+  if (sigEdges.length > 0) {
+    const taken = sigEdges.slice();
+    const effectiveCorr = floorCorr(taken[taken.length - 1].correlation);
+    return {
+      edges: taken,
+      requestedCorr: requested,
+      effectiveCorr,
+      relaxed: true,
+      inclusive: true,
+      kind: "partial",
+      message: `Only ${taken.length} statistically significant pathways found. Threshold lowered to ${formatCorrCutoff(effectiveCorr)} to display all available matches.`,
+    };
+  }
+  return {
+    ...base,
+    edges: [],
+    kind: "none",
+    message: `No statistically significant correlating pathways (p <= ${pLabel}) exist for this pathway in ${tissue}.`,
+  };
 }
 
 function routingParams() {
@@ -1898,21 +2010,41 @@ async function runExploreQuery(querySet, topN, corrCutOff, pCutOff, tissueId) {
     throw new Error(`All ${querySet.length} query pathway fetch(es) failed: ${failedQueryNames.join(", ")}`);
   }
 
+  const sigByName = new Map(); // pathway_b -> { name, correlation, score }
   const candidateScore = new Map(); // pathway_b name -> max abs(correlation)
   for (const edges of memberEdgesByName.values()) {
     for (const e of edges) {
       if (queryNames.has(e.pathway_b)) continue; // exclude other seeds from candidacy
-      if (Math.abs(e.correlation) > corrCutOff && passesPCutoff(e, pCutOff)) {
-        const score = Math.abs(e.correlation);
+      if (!passesPCutoff(e, pCutOff)) continue;
+      const score = Math.abs(e.correlation);
+      const prevSig = sigByName.get(e.pathway_b);
+      if (prevSig === undefined || score > prevSig.score) {
+        sigByName.set(e.pathway_b, { name: e.pathway_b, correlation: e.correlation, score });
+      }
+      if (score > corrCutOff) {
         const prev = candidateScore.get(e.pathway_b);
         if (prev === undefined || score > prev) candidateScore.set(e.pathway_b, score);
       }
     }
   }
-  const neighborNames = Array.from(candidateScore.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, topN)
-    .map(([name]) => name);
+
+  let neighborNames;
+  let threshold = defaultThresholdMeta(corrCutOff);
+  if (querySet.length === 1) {
+    const sigEdges = Array.from(sigByName.values()).sort((a, b) => b.score - a.score);
+    threshold = resolveDynamicThreshold(sigEdges, {
+      corrCutoff: corrCutOff,
+      pCutoff: pCutOff,
+      topN,
+      tissueId,
+    });
+    neighborNames = threshold.edges.map((e) => e.name);
+  } else {
+    neighborNames = Array.from(candidateScore.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, topN)
+      .map(([name]) => name);
+  }
 
   // Stage 2: induced subgraph among querySet ∪ neighborNames, unfiltered by
   // the cutoffs (matching the legacy app's spec). Query-query edges among
@@ -1951,7 +2083,7 @@ async function runExploreQuery(querySet, topN, corrCutOff, pCutOff, tissueId) {
     }
   }
 
-  return { edges: Array.from(edgeMap.values()), neighborNames, failedQueryNames, failedNames };
+  return { edges: Array.from(edgeMap.values()), neighborNames, failedQueryNames, failedNames, threshold };
 }
 
 function buildGroupByNameMap() {
@@ -2057,6 +2189,7 @@ function applyTissueCache(tissueId) {
     copyLinkButton.hidden = false;
     resultMeta.textContent = cache && cache.errorMessage ? cache.errorMessage : `No results for ${tissueId}`;
     setStatus(cache && cache.errorMessage ? cache.errorMessage : "");
+    hideThresholdBanner();
     renderLegend();
     renderAll();
     return;
@@ -2064,9 +2197,10 @@ function applyTissueCache(tissueId) {
   cachedEdges = cache.edges;
   cachedMaxAbsCorr = cache.maxAbsCorr;
   if (lastQuery) {
-    corrSlider.max = Math.max(1, cachedMaxAbsCorr, lastQuery.corrCutOff);
+    corrSlider.max = Math.max(1, cachedMaxAbsCorr, lastQuery.corrCutOff, cache.effectiveCorr || 0);
     pSlider.max = Math.max(0.05, lastQuery.pCutOff);
   }
+  applyThresholdUi(cache);
   renderResultMeta(
     lastQuery ? lastQuery.selectedCount : flattenQuerySet().length,
     lastQuery ? lastQuery.groupCount : groups.length,
@@ -2083,6 +2217,7 @@ function applyTissueCache(tissueId) {
 }
 
 function setActiveTissue(tissueId, rerender = true) {
+  if (tissueId !== activeTissueId) corrManuallyAdjusted = false;
   activeTissueId = tissueId;
   tissueTabList.querySelectorAll(".tissue-tab").forEach((btn) => {
     btn.setAttribute("aria-selected", btn.dataset.tissue === tissueId ? "true" : "false");
@@ -2122,6 +2257,8 @@ async function onGo() {
     return;
   }
 
+  corrManuallyAdjusted = false;
+  hideThresholdBanner();
   setStatus(tissueIds.length === 1 ? "Querying…" : `Querying ${tissueIds.join(", ")}…`);
   setBusy(true);
   try {
@@ -2129,6 +2266,7 @@ async function onGo() {
       tissueIds.map(async (tissueId) => {
         try {
           const result = await runExploreQuery(querySet, topN, corrCutOff, pCutOff, tissueId);
+          const threshold = result.threshold || defaultThresholdMeta(corrCutOff);
           return {
             tissueId,
             status: "ok",
@@ -2139,6 +2277,11 @@ async function onGo() {
             failedNames: result.failedNames,
             maxAbsCorr: result.edges.reduce((m, e) => Math.max(m, Math.abs(e.correlation)), 0),
             errorMessage: "",
+            requestedCorr: threshold.requestedCorr,
+            effectiveCorr: threshold.effectiveCorr,
+            corrInclusive: threshold.inclusive,
+            thresholdMessage: threshold.message,
+            thresholdKind: threshold.kind,
           };
         } catch (err) {
           return {
@@ -2151,6 +2294,11 @@ async function onGo() {
             failedNames: [],
             maxAbsCorr: 0,
             errorMessage: err.message,
+            requestedCorr: corrCutOff,
+            effectiveCorr: corrCutOff,
+            corrInclusive: false,
+            thresholdMessage: "",
+            thresholdKind: "ok",
           };
         }
       })
@@ -2196,9 +2344,8 @@ async function onGo() {
     // them if this query's own cutoffs fall outside that, so .value isn't
     // silently clamped to a stricter cutoff than what was actually queried.
     const firstCache = tissueResults[firstOk];
-    corrSlider.max = Math.max(1, firstCache.maxAbsCorr, corrCutOff);
+    corrSlider.max = Math.max(1, firstCache.maxAbsCorr, corrCutOff, firstCache.effectiveCorr || 0);
     pSlider.max = Math.max(0.05, pCutOff);
-    corrSlider.value = corrCutOff;
     pSlider.value = pCutOff;
     updateSliderLabels();
     liveFilters.hidden = false;
@@ -2229,6 +2376,8 @@ async function onReset() {
   corrCutoffInput.value = 0.5;
   pCutoffInput.value = 0.05;
   lastQuery = null;
+  corrManuallyAdjusted = false;
+  hideThresholdBanner();
   hiddenGraphNames = new Set();
   closeGraphAddMenu();
   cachedEdges = null;
@@ -2339,7 +2488,10 @@ function updateSliderLabels() {
   pSliderValue.textContent = Number(pSlider.value).toFixed(3);
 }
 function onSliderChange() {
+  corrManuallyAdjusted = true;
+  corrCutoffInput.value = corrSlider.value;
   updateSliderLabels();
+  writeUrlState();
   if (cachedEdges) renderAll();
 }
 
@@ -2348,7 +2500,13 @@ function sliderPassingEdges() {
   if (!cachedEdges) return [];
   const corrCutOff = parseFloat(corrSlider.value);
   const pCutOff = parseFloat(pSlider.value);
-  return cachedEdges.filter((e) => Math.abs(e.correlation) > corrCutOff && passesPCutoff(e, pCutOff));
+  const cache = activeTissueCache();
+  const inclusive = Boolean(cache && cache.corrInclusive && !corrManuallyAdjusted);
+  return cachedEdges.filter((e) => {
+    const abs = Math.abs(e.correlation);
+    const corrOk = inclusive ? abs + 1e-12 >= corrCutOff : abs > corrCutOff;
+    return corrOk && passesPCutoff(e, pCutOff);
+  });
 }
 
 function currentlyVisibleEdges() {
@@ -3594,7 +3752,13 @@ el("edgeTable").addEventListener("click", (evt) => {
 });
 copyLinkButton.addEventListener("click", copyShareLink);
 corrSlider.addEventListener("input", onSliderChange);
-pSlider.addEventListener("input", onSliderChange);
+pSlider.addEventListener("input", () => {
+  updateSliderLabels();
+  if (cachedEdges) renderAll();
+});
+if (thresholdBannerClose) {
+  thresholdBannerClose.addEventListener("click", hideThresholdBanner);
+}
 layoutSelect.addEventListener("change", applyLayout);
 document.querySelectorAll(".style-toggle").forEach((btn) => {
   btn.addEventListener("click", () => setNetworkStyle(btn.dataset.style, true));
