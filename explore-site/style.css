@@ -609,7 +609,7 @@ body:has(#results:not([hidden])) #query-status { display: none; }
 #landing > p { margin: 0 auto 12px; line-height: 1.55; max-width: 40em; }
 #landing .purpose {
   max-width: 36em;
-  margin-bottom: 8px;
+  margin-bottom: 24px;
   color: var(--text);
   font-size: 1.45rem;
   font-weight: 600;
