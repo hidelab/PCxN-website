@@ -32,11 +32,41 @@ const topNInput = el("topNInput");
 const corrCutoffInput = el("corrCutoffInput");
 const pCutoffInput = el("pCutoffInput");
 const queryForm = el("query-form");
+const seedsSummary = el("seedsSummary");
+const seedsPanel = el("seedsPanel");
+const groupTabList = el("groupTabList");
+const compareGroupButton = el("compareGroupButton");
 const goButton = el("goButton");
 const resetButton = el("resetButton");
 const queryStatus = el("query-status");
 const indexMeta = el("index-meta");
-const emptyState = el("empty-state");
+const landing = el("landing");
+const landingPanelPathways = el("landingPanelPathways");
+const landingPanelKeywords = el("landingPanelKeywords");
+const landingPanelGenes = el("landingPanelGenes");
+const landingPathwayInput = el("landingPathwayInput");
+const landingPathwayMenu = el("landingPathwayMenu");
+const landingPathwayCombobox = el("landingPathwayCombobox");
+const landingKeywordTerms = el("landingKeywordTerms");
+const landingKeywordList = el("landingKeywordList");
+const landingKeywordCount = el("landingKeywordCount");
+const landingKeywordSelectAll = el("landingKeywordSelectAll");
+const landingKeywordClearVisible = el("landingKeywordClearVisible");
+const landingCollectionHint = el("landingCollectionHint");
+const landingGenesList = el("landingGenesList");
+const landingGenesQCutoff = el("landingGenesQCutoff");
+const landingGenesFind = el("landingGenesFind");
+const landingGenesStatus = el("landingGenesStatus");
+const landingGenesCount = el("landingGenesCount");
+const landingGenesTable = el("landingGenesTable");
+const landingGenesTableBody = landingGenesTable ? landingGenesTable.querySelector("tbody") : null;
+const landingGenesSelectAll = el("landingGenesSelectAll");
+const landingGenesClearVisible = el("landingGenesClearVisible");
+const landingGenesAdd = el("landingGenesAdd");
+const landingGenesBuild = el("landingGenesBuild");
+const landingSeedBar = el("landingSeedBar");
+const landingSeedChips = el("landingSeedChips");
+const fromGenesBuild = el("fromGenesBuild");
 const results = el("results");
 const resultMeta = el("result-meta");
 const liveFilters = el("live-filters");
@@ -73,7 +103,11 @@ const classicLegendNote = el("classicLegendNote");
 const emLegendNote = el("emLegendNote");
 const hubmapLegendNote = el("hubmapLegendNote");
 const fitButton = el("fitButton");
+const interestSearchButton = el("interestSearchButton");
+const interestGenesPanel = el("interestGenesPanel");
+const interestGenesClose = el("interestGenesClose");
 const saveNetworkPngButton = el("saveNetworkPngButton");
+const saveNetworkCsvButton = el("saveNetworkCsvButton");
 const saveHeatmapPngButton = el("saveHeatmapPngButton");
 const graphNodeTableBody = el("graphNodeTable").querySelector("tbody");
 const graphNodeMeta = el("graphNodeMeta");
@@ -146,7 +180,7 @@ let pColumn = null; // e.g. "neg_log10_p_value" or "p_value"
 let fdrColumn = null;
 let pvalueMode = "raw";
 
-let lastQuery = null; // {groupByName, groups: [{id,name,color,pathways:[name,...]}], corrCutOff, pCutOff}
+let lastQuery = null; // {groupByName, groups: [{id,name,color,pathways:[name,...]}], corrCutOff, fdrCutOff}
 let cachedEdges = null; // unfiltered induced-subgraph edges for the active tissue
 let cachedMaxAbsCorr = 0;
 let corrManuallyAdjusted = false;
@@ -158,6 +192,9 @@ let tissueMenuIndex = -1;
 
 let cy = null;
 let networkStyle = "enrichmentmap";
+let fullNodeNames = false;
+let nodeLabelSize = "medium";
+let nodeLabelFont = "sans";
 let dataTable = null;
 let cxChart = null;
 let hiddenGraphNames = new Set();
@@ -172,6 +209,7 @@ let activeTab = "network";
 // resulting network gets, since stage 2 is deliberately unfiltered by the
 // cutoffs (matching the legacy app's spec).
 const MAX_TOTAL_FETCHES = 300;
+const CHIP_PREVIEW = 8;
 
 // Node colors for group 1, 2, 3, ... (cycles if you add more groups than
 // this has entries). Deliberately avoids the neighbor blue (#2563eb, see
@@ -190,9 +228,10 @@ function cssColor(value, fallback = "#111827") {
 
 // ---------- Groups state ----------
 // Each group: {id, name, color, pathways: [pathway_index entry, ...], rowEl,
-// combobox: {inputEl, menuEl, containerEl, items, index}}
+// combobox: {inputEl, menuEl, containerEl, items, index}, chipsExpanded}
 let groups = [];
 let groupIdCounter = 0;
+let activeGroupId = null;
 let bulkLookupGroup = null;
 let bulkLookupItems = [];
 let fromGenesGroup = null;
@@ -201,6 +240,16 @@ let fromGenesPrefillKey = null;
 let lastFromGenesHits = [];
 let fromGenesSortKey = "q";
 let fromGenesSortDir = "asc";
+let startMode = "pathways";
+const landingPathwayCb = landingPathwayInput && landingPathwayMenu
+  ? { inputEl: landingPathwayInput, menuEl: landingPathwayMenu, containerEl: landingPathwayCombobox, items: [], index: -1 }
+  : null;
+let landingKeywordItems = [];
+let landingGeneItems = [];
+let lastLandingGeneHits = [];
+let landingGeneChecked = new Set();
+let landingGeneSortKey = "q";
+let landingGeneSortDir = "asc";
 let geneMembership = null;
 let geneMembershipError = null;
 let interestApplied = false;
@@ -208,12 +257,12 @@ let interestMatchKeys = new Set();
 let interestRecognized = [];
 let interestUnrecognized = [];
 let interestTokenCount = 0;
-const INTEREST_RING = "#ea580c";
+const INTEREST_RING = "#b45309";
 
 function makeGroup() {
   groupIdCounter += 1;
   const color = GROUP_COLORS[(groupIdCounter - 1) % GROUP_COLORS.length];
-  const group = { id: `g${groupIdCounter}`, name: `Group ${groupIdCounter}`, color, pathways: [], rowEl: null, combobox: null };
+  const group = { id: `g${groupIdCounter}`, name: `Group ${groupIdCounter}`, color, pathways: [], rowEl: null, combobox: null, chipsExpanded: false };
   groups.push(group);
   return group;
 }
@@ -224,6 +273,7 @@ function clearAllGroupRows() {
   }
   groups = [];
   groupIdCounter = 0;
+  activeGroupId = null;
 }
 
 function resetGroups() {
@@ -407,6 +457,78 @@ function updateFetchCounter() {
     fetchCounterEl.classList.remove("warn");
   }
   if (!queryBusy) goButton.disabled = over;
+  updateSeedsSummary();
+  renderGroupTabs();
+}
+
+function closeSeedsPanel() {
+  if (!seedsPanel) return;
+  seedsPanel.hidden = true;
+  if (seedsSummary) seedsSummary.setAttribute("aria-expanded", "false");
+  updateSeedsSummary();
+}
+
+function openSeedsPanel() {
+  if (!seedsPanel) return;
+  seedsPanel.hidden = false;
+  if (seedsSummary) seedsSummary.setAttribute("aria-expanded", "true");
+  renderGroupTabs();
+  updateSeedsSummary();
+}
+
+function toggleSeedsPanel() {
+  if (!seedsPanel) return;
+  if (seedsPanel.hidden) openSeedsPanel();
+  else closeSeedsPanel();
+}
+
+function updateSeedsSummary() {
+  if (!seedsSummary) return;
+  const n = flattenQuerySet().length;
+  const g = groups.length;
+  const open = seedsPanel && !seedsPanel.hidden;
+  const action = open ? "Hide list" : "Click to view";
+  if (n === 0) seedsSummary.textContent = action;
+  else if (g <= 1) seedsSummary.textContent = `${action} · ${n}`;
+  else seedsSummary.textContent = `${action} · ${g} groups (${n})`;
+}
+
+function setActiveGroup(id) {
+  closeAllGroupMenus();
+  const group = groups.find((g) => g.id === id) || groups[0] || null;
+  activeGroupId = group ? group.id : null;
+  renderGroupTabs();
+}
+
+function renderGroupTabs() {
+  if (!groupTabList) return;
+  groupTabList.innerHTML = "";
+  const multi = groups.length > 1;
+  groupTabList.hidden = !multi;
+  if (!groups.some((g) => g.id === activeGroupId)) {
+    activeGroupId = groups[0] ? groups[0].id : null;
+  }
+  if (multi) {
+    for (const g of groups) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "tab group-tab";
+      btn.setAttribute("role", "tab");
+      btn.setAttribute("aria-selected", g.id === activeGroupId ? "true" : "false");
+      const swatch = document.createElement("span");
+      swatch.className = "group-swatch";
+      swatch.style.background = cssColor(g.color);
+      btn.appendChild(swatch);
+      const label = document.createElement("span");
+      label.textContent = `${g.name} (${g.pathways.length})`;
+      btn.appendChild(label);
+      btn.addEventListener("click", () => setActiveGroup(g.id));
+      groupTabList.appendChild(btn);
+    }
+  }
+  for (const g of groups) {
+    if (g.rowEl) g.rowEl.hidden = multi && g.id !== activeGroupId;
+  }
 }
 
 function removeGroup(id) {
@@ -415,6 +537,7 @@ function removeGroup(id) {
   if (idx === -1) return;
   const [group] = groups.splice(idx, 1);
   group.rowEl.remove();
+  if (activeGroupId === id) activeGroupId = groups[0] ? groups[0].id : null;
   updateRemoveButtonsVisibility();
   updateFetchCounter();
 }
@@ -422,7 +545,10 @@ function removeGroup(id) {
 function renderChips(group) {
   const chipList = group.rowEl.querySelector(".chip-list");
   chipList.innerHTML = "";
-  for (const p of group.pathways) {
+  const total = group.pathways.length;
+  const expanded = !!group.chipsExpanded;
+  const visible = expanded || total <= CHIP_PREVIEW ? group.pathways : group.pathways.slice(0, CHIP_PREVIEW);
+  for (const p of visible) {
     const chip = document.createElement("span");
     chip.className = "chip";
     const label = document.createElement("span");
@@ -446,7 +572,19 @@ function renderChips(group) {
     chip.appendChild(removeBtn);
     chipList.appendChild(chip);
   }
+  if (total > CHIP_PREVIEW) {
+    const more = document.createElement("button");
+    more.type = "button";
+    more.className = "text-btn chip-more";
+    more.textContent = expanded ? "Show less" : `+${total - CHIP_PREVIEW} more`;
+    more.addEventListener("click", () => {
+      group.chipsExpanded = !group.chipsExpanded;
+      renderChips(group);
+    });
+    chipList.appendChild(more);
+  }
   updateFetchCounter();
+  updateLandingState();
 }
 
 function addGroupRow(group) {
@@ -467,8 +605,8 @@ function addGroupRow(group) {
     <div class="group-lookup">
       <p class="group-lookup-label">Bulk lookup</p>
       <div class="group-lookup-actions">
-        <button type="button" class="bulk-lookup-btn text-btn">From pathway</button>
-        <button type="button" class="from-genes-btn text-btn">From genes</button>
+        <button type="button" class="bulk-lookup-btn text-btn">Keywords</button>
+        <button type="button" class="from-genes-btn text-btn">Genes</button>
       </div>
     </div>
   `;
@@ -478,11 +616,13 @@ function addGroupRow(group) {
   const nameInput = row.querySelector(".group-name-input");
   nameInput.addEventListener("input", () => {
     group.name = nameInput.value;
+    renderGroupTabs();
+    updateSeedsSummary();
     if (bulkLookupDialog.open && bulkLookupGroup === group) {
-      bulkLookupTitle.textContent = `From pathway — ${group.name}`;
+      bulkLookupTitle.textContent = `Keywords — ${group.name}`;
     }
     if (fromGenesDialog.open && fromGenesGroup === group) {
-      fromGenesTitle.textContent = `Pathway lookup from genes — ${group.name}`;
+      fromGenesTitle.textContent = `Genes — ${group.name}`;
     }
   });
 
@@ -499,7 +639,9 @@ function addGroupRow(group) {
   row.querySelector(".from-genes-btn").addEventListener("click", () => openFromGenes(group));
 
   renderChips(group);
+  activeGroupId = group.id;
   updateRemoveButtonsVisibility();
+  renderGroupTabs();
 }
 
 // ---------- Small helpers ----------
@@ -526,8 +668,87 @@ function setBusy(isBusy) {
   goButton.textContent = isBusy ? "…" : "Build network";
 }
 function showResults(visible) {
-  emptyState.hidden = visible;
   results.hidden = !visible;
+  updateLandingState();
+}
+
+function primaryGroup() {
+  if (groups.length === 0) addGroupRow(makeGroup());
+  return groups[0];
+}
+
+function setStartMode(mode, writeUrl) {
+  const next = mode === "keywords" || mode === "genes" ? mode : "pathways";
+  startMode = next;
+  document.querySelectorAll(".landing-tab").forEach((btn) => {
+    const on = btn.dataset.start === next;
+    btn.setAttribute("aria-selected", on ? "true" : "false");
+  });
+  if (landingPanelPathways) landingPanelPathways.hidden = next !== "pathways";
+  if (landingPanelKeywords) landingPanelKeywords.hidden = next !== "keywords";
+  if (landingPanelGenes) landingPanelGenes.hidden = next !== "genes";
+  if (next === "pathways") closeLandingPathwayMenu();
+  if (next === "keywords") renderLandingKeywords();
+  updateLandingCollectionHint();
+  if (writeUrl) writeUrlState();
+}
+
+function updateLandingCollectionHint() {
+  if (!landingCollectionHint) return;
+  const label = collectionSelect.value ? sourceDbLabel(collectionSelect.value) : "All";
+  landingCollectionHint.textContent =
+    collectionSelect.value
+      ? `Searching ${label} only. Switch Database/Collection to All to search every source.`
+      : "Matches pathway names in the current database/collection (All by default).";
+}
+
+function updateLandingState() {
+  if (!landing) return;
+  const seedCount = flattenQuerySet().length;
+  const showing = results && !results.hidden;
+  landing.hidden = showing;
+  queryForm.hidden = seedCount === 0 && !showing;
+  const mainEl = document.querySelector("main");
+  mainEl.classList.toggle("landing-only", seedCount === 0 && !showing);
+  mainEl.classList.toggle("has-results", showing);
+  mainEl.classList.toggle("query-dock-bottom", seedCount > 0 && !showing);
+  renderLandingSeedChips();
+  if (!showing && startMode === "keywords") renderLandingKeywords();
+  if (!showing && startMode === "genes") syncLandingGeneCheckboxes();
+}
+
+function renderLandingSeedChips() {
+  if (!landingSeedBar || !landingSeedChips) return;
+  landingSeedChips.innerHTML = "";
+  const seeds = [];
+  for (const g of groups) {
+    for (const p of g.pathways) seeds.push({ group: g, pathway: p });
+  }
+  landingSeedBar.hidden = seeds.length === 0 || (results && !results.hidden);
+  for (const { group, pathway } of seeds) {
+    const chip = document.createElement("span");
+    chip.className = "chip";
+    const label = document.createElement("span");
+    label.className = "chip-label";
+    label.textContent = pathway.pathway_name;
+    label.title = pathway.pathway_name;
+    chip.appendChild(label);
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "chip-remove";
+    removeBtn.setAttribute("aria-label", `Remove ${pathway.pathway_name}`);
+    removeBtn.textContent = "×";
+    removeBtn.addEventListener("click", () => {
+      group.pathways = group.pathways.filter((x) => x.pathway_name !== pathway.pathway_name);
+      renderChips(group);
+      syncMenuCheckbox(group, pathway.pathway_name, false);
+      syncBulkCheckbox(pathway.pathway_name, false);
+      syncFromGenesCheckbox(pathway.pathway_name, false);
+      syncLandingPathwayCheckbox(pathway.pathway_name, false);
+    });
+    chip.appendChild(removeBtn);
+    landingSeedChips.appendChild(chip);
+  }
 }
 
 async function fetchJSON(path, options) {
@@ -570,11 +791,12 @@ async function fetchPathwaySlice(tissueId, pathwayId) {
   throw lastErr;
 }
 
-function passesPCutoff(edge, pCutOff) {
+function passesFdrCutoff(edge, fdrCutOff) {
+  if (fdrColumn == null || edge[fdrColumn] == null) return false;
   if (pvalueMode === "neg_log10") {
-    return edge[pColumn] > -Math.log10(pCutOff);
+    return edge[fdrColumn] > -Math.log10(fdrCutOff);
   }
-  return edge[pColumn] < pCutOff;
+  return edge[fdrColumn] < fdrCutOff;
 }
 
 // Render-friendly metric display: convert neg_log10 storage back to an
@@ -651,12 +873,12 @@ function applyThresholdUi(cache) {
   else hideThresholdBanner();
 }
 
-function resolveDynamicThreshold(sigEdges, { corrCutoff, pCutoff, topN, tissueId }) {
+function resolveDynamicThreshold(sigEdges, { corrCutoff, fdrCutoff, topN, tissueId }) {
   const requested = Number(corrCutoff) || 0;
-  const p = Number(pCutoff);
+  const fdr = Number(fdrCutoff);
   const n = Math.max(0, parseInt(topN, 10) || 0);
   const tissue = tissueId || "this tissue";
-  const pLabel = Number.isFinite(p) ? String(p) : "the cutoff";
+  const fdrLabel = Number.isFinite(fdr) ? String(fdr) : "the cutoff";
   const base = defaultThresholdMeta(requested);
   if (n <= 0) {
     return { ...base, edges: sigEdges.filter((e) => Math.abs(e.correlation) > requested) };
@@ -695,7 +917,7 @@ function resolveDynamicThreshold(sigEdges, { corrCutoff, pCutoff, topN, tissueId
     ...base,
     edges: [],
     kind: "none",
-    message: `No statistically significant correlating pathways (p <= ${pLabel}) exist for this pathway in ${tissue}.`,
+    message: `No statistically significant correlating pathways (FDR <= ${fdrLabel}) exist for this pathway in ${tissue}.`,
   };
 }
 
@@ -722,6 +944,14 @@ function setHomeLink() {
 // URLSearchParams handles percent-encoding on write/decode on read.
 function writeUrlState() {
   const params = routingParams();
+  const seedCount = flattenQuerySet().length;
+  if (seedCount === 0) {
+    if (startMode && startMode !== "pathways") params.set("start", startMode);
+    const qs = params.toString();
+    const next = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+    history.replaceState(null, "", next);
+    return;
+  }
   const tissues = selectedTissueIds();
   if (tissues.length) params.set("tissues", tissues.join(","));
   if (collectionSelect.value) params.set("collection", collectionSelect.value);
@@ -733,19 +963,24 @@ function writeUrlState() {
   }
   params.set("topN", topNInput.value);
   params.set("corr", corrCutoffInput.value);
-  params.set("p", pCutoffInput.value);
+  params.set("fdr", pCutoffInput.value);
   const next = `${window.location.pathname}?${params.toString()}`;
   history.replaceState(null, "", next);
 }
 
 function applyUrlFields() {
   const params = new URLSearchParams(window.location.search);
+  const start = params.get("start");
+  if (start === "keywords" || start === "genes" || start === "pathways") {
+    setStartMode(start, false);
+  }
   if (params.get("collection") && collectionSelect.querySelector(`option[value="${CSS.escape(params.get("collection"))}"]`)) {
     collectionSelect.value = params.get("collection");
   }
   if (params.get("topN")) topNInput.value = params.get("topN");
   if (params.get("corr")) corrCutoffInput.value = params.get("corr");
-  if (params.get("p")) pCutoffInput.value = params.get("p");
+  if (params.get("fdr")) pCutoffInput.value = params.get("fdr");
+  else if (params.get("p")) pCutoffInput.value = params.get("p");
 
   const groupsParam = params.get("groups");
   if (groupsParam) {
@@ -758,6 +993,8 @@ function applyUrlFields() {
       console.error("Malformed ?groups= URL parameter, ignoring:", err);
     }
   }
+  updateLandingCollectionHint();
+  updateLandingState();
 }
 
 // ---------- Bootstrap: load tissues, then pathway index ----------
@@ -779,6 +1016,8 @@ async function init() {
   applyUrlFields();
   if (flattenQuerySet().length > 0) {
     await onGo();
+  } else {
+    updateLandingState();
   }
 }
 
@@ -985,17 +1224,30 @@ function tissueCellTypeCount() {
 function updateEmptyCatalog() {
   const catalog = el("emptyCatalog");
   if (!catalog) return;
+  catalog.replaceChildren();
   const nPathways = pathwayIndexData && pathwayIndexData.pathways ? pathwayIndexData.pathways.length : 0;
   const nTissues = tissueCellTypeCount();
   const nCollections = sourceDbSummary().length;
   if (!nPathways) {
-    catalog.textContent = "";
+    catalog.hidden = true;
     return;
   }
-  const pathwayBit = `${nPathways.toLocaleString()} pathway${nPathways === 1 ? "" : "s"}`;
-  const tissueBit = `${nTissues.toLocaleString()} tissues-celltypes`;
-  const collectionBit = `${nCollections.toLocaleString()} collection${nCollections === 1 ? "" : "s"}`;
-  catalog.textContent = `${pathwayBit} across ${tissueBit} in ${collectionBit}`;
+  const bits = [
+    [nPathways.toLocaleString(), nPathways === 1 ? "pathway" : "pathways"],
+    [nTissues.toLocaleString(), "tissue-cell types"],
+    [nCollections.toLocaleString(), nCollections === 1 ? "database/collection" : "databases/collections"],
+  ];
+  for (const [value, label] of bits) {
+    const cell = document.createElement("span");
+    cell.className = "catalog-stat-cell";
+    const num = document.createElement("strong");
+    num.textContent = value;
+    const lab = document.createElement("span");
+    lab.textContent = label;
+    cell.append(num, lab);
+    catalog.appendChild(cell);
+  }
+  catalog.hidden = false;
 }
 
 function populateCollectionSelect() {
@@ -1058,10 +1310,17 @@ function syncMenuCheckbox(group, name, checked) {
   if (box) box.checked = checked;
 }
 
+function syncLandingPathwayCheckbox(name, checked) {
+  if (!landingPathwayCb || landingPathwayCb.menuEl.hidden) return;
+  const li = landingPathwayCb.items.find((item) => item.dataset.name === name);
+  if (!li) return;
+  const box = li.querySelector("input[type=checkbox]");
+  if (box) box.checked = checked;
+}
+
 // ---------- Per-group combobox (generalizes what used to be one global combobox) ----------
-function openGroupMenu(group) {
-  if (!pathwayIndexData) return;
-  const cb = group.combobox;
+function openPathwayMenu(cb, group) {
+  if (!pathwayIndexData || !cb) return;
   const excluded = namesInOtherGroups(group);
   const selected = new Set(group.pathways.map((p) => p.pathway_name));
   const matches = filteredPathways(cb.inputEl.value, excluded);
@@ -1098,8 +1357,8 @@ function openGroupMenu(group) {
   cb.inputEl.setAttribute("aria-expanded", "true");
 }
 
-function closeGroupMenu(group) {
-  const cb = group.combobox;
+function closePathwayMenu(cb) {
+  if (!cb) return;
   cb.menuEl.hidden = true;
   cb.menuEl.innerHTML = "";
   cb.items = [];
@@ -1107,15 +1366,29 @@ function closeGroupMenu(group) {
   cb.inputEl.setAttribute("aria-expanded", "false");
 }
 
+function openGroupMenu(group) {
+  openPathwayMenu(group.combobox, group);
+}
+
+function closeGroupMenu(group) {
+  closePathwayMenu(group.combobox);
+}
+
+function closeLandingPathwayMenu() {
+  closePathwayMenu(landingPathwayCb);
+}
+
 function closeAllGroupMenus() {
   for (const g of groups) closeGroupMenu(g);
+  closeLandingPathwayMenu();
+}
+
+function openLandingPathwayMenu() {
+  openPathwayMenu(landingPathwayCb, primaryGroup());
 }
 
 function highlightGroupItem(group) {
-  const cb = group.combobox;
-  cb.items.forEach((item, i) => item.setAttribute("aria-selected", i === cb.index ? "true" : "false"));
-  const active = cb.items[cb.index];
-  if (active) active.scrollIntoView({ block: "nearest" });
+  highlightComboboxItem(group.combobox);
 }
 
 function togglePathwayInGroup(group, name) {
@@ -1128,13 +1401,66 @@ function togglePathwayInGroup(group, name) {
     syncMenuCheckbox(group, name, false);
     syncBulkCheckbox(name, false);
     syncFromGenesCheckbox(name, false);
+    syncLandingPathwayCheckbox(name, false);
+    syncLandingKeywordCheckbox(name, false);
   } else {
     group.pathways.push(entry);
+    if (group.pathways.length > CHIP_PREVIEW) group.chipsExpanded = true;
     renderChips(group);
     syncMenuCheckbox(group, name, true);
     syncBulkCheckbox(name, true);
     syncFromGenesCheckbox(name, true);
+    syncLandingPathwayCheckbox(name, true);
+    syncLandingKeywordCheckbox(name, true);
   }
+}
+
+function attachLandingPathwayEvents() {
+  if (!landingPathwayCb) return;
+  const { inputEl } = landingPathwayCb;
+  inputEl.addEventListener("focus", openLandingPathwayMenu);
+  inputEl.addEventListener("click", openLandingPathwayMenu);
+  inputEl.addEventListener("input", openLandingPathwayMenu);
+  inputEl.addEventListener("keydown", (evt) => {
+    const cb = landingPathwayCb;
+    const group = primaryGroup();
+    if (evt.key === "Backspace" && inputEl.value === "" && group.pathways.length > 0) {
+      evt.preventDefault();
+      const removed = group.pathways[group.pathways.length - 1];
+      group.pathways = group.pathways.slice(0, -1);
+      renderChips(group);
+      if (removed) {
+        syncMenuCheckbox(group, removed.pathway_name, false);
+        syncLandingPathwayCheckbox(removed.pathway_name, false);
+      }
+      return;
+    }
+    if (cb.menuEl.hidden && (evt.key === "ArrowDown" || evt.key === "ArrowUp")) {
+      openLandingPathwayMenu();
+    }
+    if (cb.menuEl.hidden) return;
+    if (evt.key === "ArrowDown") {
+      evt.preventDefault();
+      cb.index = Math.min(cb.items.length - 1, cb.index + 1);
+      highlightComboboxItem(cb);
+    } else if (evt.key === "ArrowUp") {
+      evt.preventDefault();
+      cb.index = Math.max(0, cb.index - 1);
+      highlightComboboxItem(cb);
+    } else if (evt.key === "Enter" && cb.index >= 0) {
+      evt.preventDefault();
+      togglePathwayInGroup(group, cb.items[cb.index].dataset.name);
+    } else if (evt.key === "Escape") {
+      evt.preventDefault();
+      closeLandingPathwayMenu();
+    }
+  });
+}
+
+function highlightComboboxItem(cb) {
+  cb.items.forEach((item, i) => item.setAttribute("aria-selected", i === cb.index ? "true" : "false"));
+  const active = cb.items[cb.index];
+  if (active) active.scrollIntoView({ block: "nearest" });
 }
 
 function attachGroupComboboxEvents(group) {
@@ -1212,6 +1538,82 @@ function syncBulkCheckbox(name, checked) {
   if (box) box.checked = checked;
 }
 
+function landingKeywordMode() {
+  const checked = document.querySelector('input[name="landingKeywordMode"]:checked');
+  return checked && checked.value === "and" ? "and" : "or";
+}
+
+function syncLandingKeywordCheckbox(name, checked) {
+  const li = landingKeywordItems.find((item) => item.dataset.name === name);
+  if (!li) return;
+  const box = li.querySelector("input[type=checkbox]");
+  if (box) box.checked = checked;
+}
+
+function renderLandingKeywords() {
+  if (!landingKeywordList) return;
+  landingKeywordList.innerHTML = "";
+  landingKeywordItems = [];
+  const terms = parseBulkTerms(landingKeywordTerms ? landingKeywordTerms.value : "");
+  if (!pathwayIndexData || terms.length === 0) {
+    if (landingKeywordCount) landingKeywordCount.textContent = "";
+    const empty = document.createElement("li");
+    empty.className = "bulk-lookup-empty";
+    empty.textContent = "Paste one or more terms to search.";
+    landingKeywordList.appendChild(empty);
+    return;
+  }
+  const group = primaryGroup();
+  const selected = new Set(group.pathways.map((p) => p.pathway_name));
+  const matches = bulkFilteredPathways(terms, landingKeywordMode(), namesInOtherGroups(group));
+  const n = matches.length;
+  if (landingKeywordCount) landingKeywordCount.textContent = n === 1 ? "1 matching pathway" : `${n} matching pathways`;
+  if (n === 0) {
+    const empty = document.createElement("li");
+    empty.className = "bulk-lookup-empty";
+    empty.textContent = "No matching pathways";
+    landingKeywordList.appendChild(empty);
+    return;
+  }
+  const frag = document.createDocumentFragment();
+  for (const p of matches) {
+    const li = document.createElement("li");
+    li.setAttribute("role", "option");
+    li.dataset.name = p.pathway_name;
+    const checked = selected.has(p.pathway_name);
+    li.innerHTML = `<div class="combo-option"><input type="checkbox" tabindex="-1"${
+      checked ? " checked" : ""
+    }><span class="combo-text"><span class="combo-name">${escapeHtml(p.pathway_name)}</span><span class="combo-meta">${escapeHtml(
+      pathwayMetaLabel(p)
+    )}</span></span></div>`;
+    li.addEventListener("mousedown", (evt) => {
+      evt.preventDefault();
+      togglePathwayInGroup(group, p.pathway_name);
+      syncLandingKeywordCheckbox(p.pathway_name, groupHasPathway(group, p.pathway_name));
+    });
+    frag.appendChild(li);
+    landingKeywordItems.push(li);
+  }
+  landingKeywordList.appendChild(frag);
+}
+
+function setVisibleLandingKeywordSelection(checked) {
+  const group = primaryGroup();
+  const other = namesInOtherGroups(group);
+  for (const li of landingKeywordItems) {
+    const name = li.dataset.name;
+    const has = groupHasPathway(group, name);
+    if (checked && !has) {
+      const entry = pathwayByName.get(name);
+      if (entry && !other.has(name)) group.pathways.push(entry);
+    } else if (!checked && has) {
+      group.pathways = group.pathways.filter((p) => p.pathway_name !== name);
+    }
+  }
+  renderChips(group);
+  renderLandingKeywords();
+}
+
 function renderBulkLookupResults() {
   bulkLookupList.innerHTML = "";
   bulkLookupItems = [];
@@ -1260,7 +1662,7 @@ function openBulkLookup(group) {
   if (!pathwayIndexData) return;
   closeAllGroupMenus();
   bulkLookupGroup = group;
-  bulkLookupTitle.textContent = `From pathway — ${group.name}`;
+  bulkLookupTitle.textContent = `Keywords — ${group.name}`;
   bulkLookupTerms.value = "";
   const orRadio = document.querySelector('input[name="bulkLookupMode"][value="or"]');
   if (orRadio) orRadio.checked = true;
@@ -1572,14 +1974,16 @@ async function applyInterestOverlay() {
 }
 
 function useFromGenesListForInterest() {
-  const text = (fromGenesList && fromGenesList.value ? fromGenesList.value : "").trim();
+  const dialogText = (fromGenesList && fromGenesList.value ? fromGenesList.value : "").trim();
+  const landingText = (landingGenesList && landingGenesList.value ? landingGenesList.value : "").trim();
+  const text = dialogText || landingText;
   if (!text) {
     if (interestGenesStatus) {
-      interestGenesStatus.textContent = "Open Bulk lookup → From genes and paste a list first, or paste genes here.";
+      interestGenesStatus.textContent = "Paste a gene list on the Genes tab or in Genes lookup first, or paste genes here.";
     }
     return;
   }
-  interestGenesList.value = fromGenesList.value;
+  interestGenesList.value = dialogText || landingText;
   applyInterestOverlay();
 }
 
@@ -1948,7 +2352,7 @@ async function openFromGenes(group) {
   if (bulkLookupDialog.open) bulkLookupDialog.close();
   fromGenesGroup = group;
   fromGenesPrefillKey = null;
-  fromGenesTitle.textContent = `Pathway lookup from genes — ${group.name}`;
+  fromGenesTitle.textContent = `Genes — ${group.name}`;
   fromGenesList.value = "";
   fromGenesQCutoff.value = "0.05";
   fromGenesStatus.textContent = "";
@@ -1976,12 +2380,213 @@ function setVisibleFromGenesSelection(checked) {
   renderFromGenesRows(lastFromGenesHits);
 }
 
+function landingGeneEmptyRow(message) {
+  if (!landingGenesTableBody) return;
+  const tr = document.createElement("tr");
+  tr.className = "from-genes-empty";
+  tr.innerHTML = `<td class="from-genes-empty" colspan="6">${escapeHtml(message)}</td>`;
+  landingGenesTableBody.appendChild(tr);
+}
+
+function sortLandingGeneHits(hits) {
+  const mul = landingGeneSortDir === "asc" ? 1 : -1;
+  return [...hits].sort((a, b) => {
+    if (landingGeneSortKey === "name") {
+      return a.name.localeCompare(b.name) * mul;
+    }
+    const av = Number(a[landingGeneSortKey]);
+    const bv = Number(b[landingGeneSortKey]);
+    const aMissing = !Number.isFinite(av);
+    const bMissing = !Number.isFinite(bv);
+    if (aMissing && bMissing) return 0;
+    if (aMissing) return 1;
+    if (bMissing) return -1;
+    if (av === bv) return 0;
+    return (av < bv ? -1 : 1) * mul;
+  });
+}
+
+function updateLandingGeneSortHeaders() {
+  if (!landingGenesTable) return;
+  landingGenesTable.querySelectorAll("th[data-sort]").forEach((th) => {
+    if (th.dataset.sort === landingGeneSortKey) {
+      th.setAttribute("aria-sort", landingGeneSortDir === "asc" ? "ascending" : "descending");
+    } else {
+      th.setAttribute("aria-sort", "none");
+    }
+  });
+}
+
+function onLandingGeneSortClick(evt) {
+  const th = evt.target.closest("th[data-sort]");
+  if (!th) return;
+  const key = th.dataset.sort;
+  if (landingGeneSortKey === key) {
+    landingGeneSortDir = landingGeneSortDir === "asc" ? "desc" : "asc";
+  } else {
+    landingGeneSortKey = key;
+    landingGeneSortDir = "asc";
+  }
+  updateLandingGeneSortHeaders();
+  if (lastLandingGeneHits.length) renderLandingGeneRows(lastLandingGeneHits);
+}
+
+function renderLandingGeneRows(hits, fallbackNote) {
+  if (!landingGenesTableBody) return;
+  landingGenesTableBody.innerHTML = "";
+  landingGeneItems = [];
+  updateLandingGeneSortHeaders();
+  if (hits.length === 0) {
+    landingGeneEmptyRow(fallbackNote || "No pathways to show.");
+    return;
+  }
+  const ordered = sortLandingGeneHits(hits);
+  const frag = document.createDocumentFragment();
+  for (const hit of ordered) {
+    const tr = document.createElement("tr");
+    tr.dataset.name = hit.name;
+    const checked = landingGeneChecked.has(hit.name);
+    tr.innerHTML = `<td><input type="checkbox" tabindex="-1"${checked ? " checked" : ""}></td>
+      <td>${escapeHtml(hit.name)}</td>
+      <td>${hit.size}</td>
+      <td>${hit.overlap}</td>
+      <td>${Number.isFinite(hit.fold) ? hit.fold.toFixed(1) : ""}</td>
+      <td>${formatQValue(hit.q)}</td>`;
+    tr.addEventListener("mousedown", (evt) => {
+      evt.preventDefault();
+      if (landingGeneChecked.has(hit.name)) landingGeneChecked.delete(hit.name);
+      else landingGeneChecked.add(hit.name);
+      const box = tr.querySelector("input[type=checkbox]");
+      if (box) box.checked = landingGeneChecked.has(hit.name);
+    });
+    frag.appendChild(tr);
+    landingGeneItems.push(tr);
+  }
+  landingGenesTableBody.appendChild(frag);
+}
+
+function syncLandingGeneCheckboxes() {
+  for (const row of landingGeneItems) {
+    const box = row.querySelector("input[type=checkbox]");
+    if (box) box.checked = landingGeneChecked.has(row.dataset.name);
+  }
+}
+
+async function renderLandingGenes() {
+  if (!landingGenesTableBody) return;
+  landingGenesTableBody.innerHTML = "";
+  landingGeneItems = [];
+  lastLandingGeneHits = [];
+  if (landingGenesCount) landingGenesCount.textContent = "";
+  if (landingGenesStatus) landingGenesStatus.textContent = "";
+  const tokens = parseGeneTokens(landingGenesList ? landingGenesList.value : "");
+  if (tokens.length === 0) {
+    landingGeneEmptyRow("Paste gene symbols or Entrez IDs to search.");
+    return;
+  }
+  try {
+    await ensureGeneMembership();
+  } catch (err) {
+    if (landingGenesStatus) landingGenesStatus.textContent = `Could not load gene membership. ${err.message}`;
+    landingGeneEmptyRow("Gene membership file is missing.");
+    return;
+  }
+  const qCut = Number(landingGenesQCutoff ? landingGenesQCutoff.value : 0.05);
+  const cutoff = Number.isFinite(qCut) ? qCut : 0.05;
+  const result = scoreFromGenes(tokens);
+  const collectionLabel = collectionSelect.value || "all collections";
+  const skipBit = result.skippedNoMembership
+    ? ` ${result.skippedNoMembership} pathway(s) skipped (no gene membership).`
+    : "";
+  if (landingGenesStatus) {
+    landingGenesStatus.textContent = `${result.recognized.length} recognized gene(s), ${result.unrecognized.length} unrecognized. Tested ${result.tested} pathway(s) in ${collectionLabel} (universe ${result.universeSize}).${skipBit}`;
+    if (result.unrecognized.length && result.unrecognized.length <= 12) {
+      landingGenesStatus.textContent += ` Unrecognized: ${result.unrecognized.join(", ")}.`;
+    } else if (result.unrecognized.length > 12) {
+      landingGenesStatus.textContent += ` Unrecognized include: ${result.unrecognized.slice(0, 8).join(", ")}…`;
+    }
+  }
+  if (result.tested === 0) {
+    landingGeneEmptyRow("No pathways in this collection have gene membership.");
+    return;
+  }
+  if (result.recognized.length === 0) {
+    landingGeneEmptyRow("None of those genes are in the current collection universe.");
+    return;
+  }
+  const group = primaryGroup();
+  const other = namesInOtherGroups(group);
+  const ranked = result.rows.filter((r) => !other.has(r.name));
+  const significant = ranked.filter((r) => r.q < cutoff);
+  let hits = significant;
+  let usedFallback = false;
+  if (hits.length === 0) {
+    hits = ranked.slice(0, 10);
+    usedFallback = true;
+    if (landingGenesCount) landingGenesCount.textContent = `No pathways with q < ${cutoff}. Showing top 10.`;
+  } else if (landingGenesCount) {
+    landingGenesCount.textContent =
+      hits.length === 1 ? "1 pathway with q below cutoff" : `${hits.length} pathways with q below cutoff`;
+  }
+  const visible = new Set(hits.map((h) => h.name));
+  for (const name of [...landingGeneChecked]) {
+    if (!visible.has(name)) landingGeneChecked.delete(name);
+  }
+  lastLandingGeneHits = hits;
+  renderLandingGeneRows(hits, usedFallback ? "No pathways to show." : "No pathways with q below cutoff.");
+}
+
+function setVisibleLandingGeneSelection(checked) {
+  for (const row of landingGeneItems) {
+    const name = row.dataset.name;
+    if (!name) continue;
+    if (checked) landingGeneChecked.add(name);
+    else landingGeneChecked.delete(name);
+  }
+  syncLandingGeneCheckboxes();
+}
+
+function addLandingGeneSelection() {
+  const group = primaryGroup();
+  const other = namesInOtherGroups(group);
+  let added = 0;
+  for (const name of landingGeneChecked) {
+    if (groupHasPathway(group, name) || other.has(name)) continue;
+    const entry = pathwayByName.get(name);
+    if (!entry) continue;
+    group.pathways.push(entry);
+    added += 1;
+  }
+  renderChips(group);
+  return added;
+}
+
+async function buildFromLandingGenes() {
+  addLandingGeneSelection();
+  if (flattenQuerySet().length === 0) {
+    if (landingGenesStatus) {
+      landingGenesStatus.textContent = "Select one or more pathways, then Add and build.";
+    }
+    return;
+  }
+  await onGo();
+}
+
+async function buildFromGenesDialog() {
+  if (fromGenesDialog.open) fromGenesDialog.close();
+  if (flattenQuerySet().length === 0) {
+    if (fromGenesStatus) fromGenesStatus.textContent = "Select one or more pathways, then Add and build.";
+    return;
+  }
+  await onGo();
+}
+
 // ---------- Query-replication algorithm (see design doc §9's generalization) ----------
 // querySet: deduped array of {id, name} - the UNION of every group's members,
 // flattened. Group identity plays no role here, only in rendering (below) -
 // same as the legacy app's up/down split never affected its SQL query, only
 // its frontend coloring.
-async function runExploreQuery(querySet, topN, corrCutOff, pCutOff, tissueId) {
+async function runExploreQuery(querySet, topN, corrCutOff, fdrCutOff, tissueId) {
   const queryNames = new Set(querySet.map((m) => m.name));
 
   // Stage 1: fetch every query member's own slice, then rank candidates
@@ -2015,7 +2620,7 @@ async function runExploreQuery(querySet, topN, corrCutOff, pCutOff, tissueId) {
   for (const edges of memberEdgesByName.values()) {
     for (const e of edges) {
       if (queryNames.has(e.pathway_b)) continue; // exclude other seeds from candidacy
-      if (!passesPCutoff(e, pCutOff)) continue;
+      if (!passesFdrCutoff(e, fdrCutOff)) continue;
       const score = Math.abs(e.correlation);
       const prevSig = sigByName.get(e.pathway_b);
       if (prevSig === undefined || score > prevSig.score) {
@@ -2034,7 +2639,7 @@ async function runExploreQuery(querySet, topN, corrCutOff, pCutOff, tissueId) {
     const sigEdges = Array.from(sigByName.values()).sort((a, b) => b.score - a.score);
     threshold = resolveDynamicThreshold(sigEdges, {
       corrCutoff: corrCutOff,
-      pCutoff: pCutOff,
+      fdrCutoff: fdrCutOff,
       topN,
       tissueId,
     });
@@ -2198,7 +2803,7 @@ function applyTissueCache(tissueId) {
   cachedMaxAbsCorr = cache.maxAbsCorr;
   if (lastQuery) {
     corrSlider.max = Math.max(1, cachedMaxAbsCorr, lastQuery.corrCutOff, cache.effectiveCorr || 0);
-    pSlider.max = Math.max(0.05, lastQuery.pCutOff);
+    pSlider.max = Math.max(0.05, lastQuery.fdrCutOff);
   }
   applyThresholdUi(cache);
   renderResultMeta(
@@ -2230,6 +2835,7 @@ async function onGo() {
   clearError();
   closeAllGroupMenus();
   closeTissueMenu();
+  closeSeedsPanel();
   if (!pathwayIndexData) {
     showError("Pathway index is still loading.");
     return;
@@ -2246,7 +2852,7 @@ async function onGo() {
   }
   const topN = Math.max(0, parseInt(topNInput.value, 10) || 0);
   const corrCutOff = parseFloat(corrCutoffInput.value) || 0;
-  const pCutOff = parseFloat(pCutoffInput.value) || 1;
+  const fdrCutOff = parseFloat(pCutoffInput.value) || 1;
 
   const perTissue = querySet.length + topN;
   const totalFetches = perTissue * tissueIds.length;
@@ -2265,7 +2871,7 @@ async function onGo() {
     const settled = await Promise.all(
       tissueIds.map(async (tissueId) => {
         try {
-          const result = await runExploreQuery(querySet, topN, corrCutOff, pCutOff, tissueId);
+          const result = await runExploreQuery(querySet, topN, corrCutOff, fdrCutOff, tissueId);
           const threshold = result.threshold || defaultThresholdMeta(corrCutOff);
           return {
             tissueId,
@@ -2334,19 +2940,19 @@ async function onGo() {
         pathways: g.pathways.map((p) => p.pathway_name),
       })),
       corrCutOff,
-      pCutOff,
+      fdrCutOff,
       selectedCount: querySet.length,
       groupCount: groups.length,
       tissueIds,
     };
 
-    // Sliders default to the old app's ranges (corr 0-1, p 0.001-0.05); widen
+    // Sliders default to the old app's ranges (corr 0-1, FDR 0.001-0.05); widen
     // them if this query's own cutoffs fall outside that, so .value isn't
     // silently clamped to a stricter cutoff than what was actually queried.
     const firstCache = tissueResults[firstOk];
     corrSlider.max = Math.max(1, firstCache.maxAbsCorr, corrCutOff, firstCache.effectiveCorr || 0);
-    pSlider.max = Math.max(0.05, pCutOff);
-    pSlider.value = pCutOff;
+    pSlider.max = Math.max(0.05, fdrCutOff);
+    pSlider.value = fdrCutOff;
     updateSliderLabels();
     liveFilters.hidden = false;
     showResults(true);
@@ -2367,14 +2973,20 @@ async function onReset() {
   clearError();
   closeAllGroupMenus();
   closeTissueMenu();
+  closeSeedsPanel();
   clearInterestState();
+  setInterestPanelOpen(false);
   setNetworkStyle("enrichmentmap", false);
+  setFullNodeNames(false);
+  setNodeLabelSize("medium");
+  setNodeLabelFont("sans");
   if (layoutSelect) layoutSelect.value = "fcose";
   resetGroups();
   collectionSelect.value = "";
   topNInput.value = 10;
   corrCutoffInput.value = 0.5;
   pCutoffInput.value = 0.05;
+  updateLandingCollectionHint();
   lastQuery = null;
   corrManuallyAdjusted = false;
   hideThresholdBanner();
@@ -2399,6 +3011,18 @@ async function onReset() {
   legendEl.innerHTML = "";
   setStatus("");
   nodeInfo.textContent = "";
+  if (landingPathwayInput) landingPathwayInput.value = "";
+  if (landingKeywordTerms) landingKeywordTerms.value = "";
+  if (landingGenesList) landingGenesList.value = "";
+  if (landingGenesQCutoff) landingGenesQCutoff.value = "0.05";
+  if (landingGenesStatus) landingGenesStatus.textContent = "";
+  if (landingGenesCount) landingGenesCount.textContent = "";
+  if (landingGenesTableBody) landingGenesTableBody.innerHTML = "";
+  landingKeywordItems = [];
+  landingGeneItems = [];
+  lastLandingGeneHits = [];
+  landingGeneChecked = new Set();
+  if (landingKeywordList) landingKeywordList.innerHTML = "";
   showResults(false);
   networkSection.hidden = true;
   heatmapSection.hidden = true;
@@ -2438,7 +3062,7 @@ function fillExampleGroup(group, pathwayNames, groupName) {
   renderChips(group);
 }
 
-async function runExample(spec, collection, groupName) {
+function loadExample(spec, collection, groupName) {
   if (Array.isArray(spec) || typeof spec === "string") {
     spec = {
       groups: [{ name: groupName || "", pathways: Array.isArray(spec) ? spec : [spec] }],
@@ -2457,15 +3081,27 @@ async function runExample(spec, collection, groupName) {
     spec.corr != null && Number.isFinite(Number(spec.corr)) ? String(spec.corr) : "0.5";
   const payloads = (spec.groups || []).filter((g) => g && (g.pathways || []).length);
   if (payloads.length === 0) return;
+  showResults(false);
   clearAllGroupRows();
   for (const gp of payloads) {
     const group = makeGroup();
     addGroupRow(group);
     fillExampleGroup(group, gp.pathways, gp.name);
   }
+  const single =
+    payloads.length === 1 && (payloads[0].pathways || []).length === 1
+      ? resolveExamplePathway(payloads[0].pathways[0])
+      : null;
+  if (landingPathwayInput) {
+    landingPathwayInput.value = single ? single.pathway_name : "";
+  }
   updateRemoveButtonsVisibility();
   updateFetchCounter();
-  await onGo();
+  updateLandingCollectionHint();
+  updateLandingState();
+  writeUrlState();
+  if (groups.length > 1) openSeedsPanel();
+  else closeSeedsPanel();
 }
 
 async function copyShareLink() {
@@ -2499,13 +3135,13 @@ function onSliderChange() {
 function sliderPassingEdges() {
   if (!cachedEdges) return [];
   const corrCutOff = parseFloat(corrSlider.value);
-  const pCutOff = parseFloat(pSlider.value);
+  const fdrCutOff = parseFloat(pSlider.value);
   const cache = activeTissueCache();
   const inclusive = Boolean(cache && cache.corrInclusive && !corrManuallyAdjusted);
   return cachedEdges.filter((e) => {
     const abs = Math.abs(e.correlation);
     const corrOk = inclusive ? abs + 1e-12 >= corrCutOff : abs > corrCutOff;
-    return corrOk && passesPCutoff(e, pCutOff);
+    return corrOk && passesFdrCutoff(e, fdrCutOff);
   });
 }
 
@@ -2823,7 +3459,7 @@ function renderAll() {
     }
   }
   if (activeTab === "network") {
-    tryRender("Network", renderNetwork);
+    tryRender("Network graph", renderNetwork);
     tryRender("Pathway table", renderGraphNodeTable);
     if (isCyLive()) {
       requestAnimationFrame(() => {
@@ -2833,8 +3469,8 @@ function renderAll() {
       });
     }
   }
-  if (activeTab === "table") tryRender("Edge table", renderTable);
-  if (activeTab === "heatmap") tryRender("Heatmap", renderHeatmap);
+  if (activeTab === "table") tryRender("Network data table", renderTable);
+  if (activeTab === "heatmap") tryRender("Network Heatmap", renderHeatmap);
   tryRender("Legend", renderLegend);
 
   if (renderErrors.length > 0) {
@@ -3051,6 +3687,88 @@ function formatNodeLabel(name) {
   return `${short.slice(0, NODE_LABEL_MAX - 1)}…`;
 }
 
+function nodeLabelText(name) {
+  return fullNodeNames ? String(name || "") : formatNodeLabel(name);
+}
+
+const NODE_LABEL_FONT_FAMILIES = {
+  sans: '"Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif',
+  serif: 'Georgia, "Times New Roman", Times, serif',
+  mono: '"SF Mono", Consolas, Menlo, monospace',
+};
+const NODE_LABEL_SIZE_PX = {
+  small: { classic: 9, map: 8, cluster: 10 },
+  medium: { classic: 11, map: 10, cluster: 11 },
+  large: { classic: 14, map: 13, cluster: 14 },
+};
+
+function nodeLabelFontFamily() {
+  return NODE_LABEL_FONT_FAMILIES[nodeLabelFont] || NODE_LABEL_FONT_FAMILIES.sans;
+}
+
+function nodeLabelFontSizePx(kind) {
+  const row = NODE_LABEL_SIZE_PX[nodeLabelSize] || NODE_LABEL_SIZE_PX.medium;
+  return `${row[kind] || row.classic}px`;
+}
+
+function nodeLabelWrapStyle() {
+  const scale = nodeLabelSize === "large" ? 1.25 : nodeLabelSize === "small" ? 0.9 : 1;
+  const px = (n) => `${Math.round(n * scale)}px`;
+  if (fullNodeNames) {
+    return { wrap: "wrap", maxWidth: usesMapNodeStyle() ? px(140) : px(160) };
+  }
+  if (usesMapNodeStyle()) return { wrap: "wrap", maxWidth: px(70) };
+  return { wrap: "ellipsis", maxWidth: px(80) };
+}
+
+function syncNameToggleButtons() {
+  document.querySelectorAll(".name-toggle").forEach((btn) => {
+    const isFull = btn.dataset.names === "full";
+    btn.setAttribute("aria-pressed", isFull === fullNodeNames ? "true" : "false");
+  });
+}
+
+function setFullNodeNames(on) {
+  fullNodeNames = Boolean(on);
+  syncNameToggleButtons();
+  if (!isCyLive()) return;
+  cy.batch(() => {
+    cy.nodes().forEach((n) => {
+      if (isClusterLabelNode(n)) return;
+      n.data("label", nodeLabelText(n.data("fullName") || n.id()));
+    });
+  });
+  cy.style(networkStyles());
+}
+
+function syncSizeToggleButtons() {
+  document.querySelectorAll(".size-toggle").forEach((btn) => {
+    btn.setAttribute("aria-pressed", btn.dataset.size === nodeLabelSize ? "true" : "false");
+  });
+}
+
+function syncFontToggleButtons() {
+  document.querySelectorAll(".font-toggle").forEach((btn) => {
+    btn.setAttribute("aria-pressed", btn.dataset.font === nodeLabelFont ? "true" : "false");
+  });
+}
+
+function applyNodeLabelStyle() {
+  syncSizeToggleButtons();
+  syncFontToggleButtons();
+  if (isCyLive()) cy.style(networkStyles());
+}
+
+function setNodeLabelSize(size) {
+  nodeLabelSize = NODE_LABEL_SIZE_PX[size] ? size : "medium";
+  applyNodeLabelStyle();
+}
+
+function setNodeLabelFont(font) {
+  nodeLabelFont = NODE_LABEL_FONT_FAMILIES[font] ? font : "sans";
+  applyNodeLabelStyle();
+}
+
 function networkLayoutOptions() {
   const name = layoutSelect.value;
   const shared = { name, fit: false, animate: false, padding: 40, stop: afterNetworkLayout };
@@ -3113,23 +3831,25 @@ function networkStyles() {
   const interest = {
     selector: "node.interest-hit",
     style: {
-      "border-width": 3,
+      "border-width": 4,
       "border-color": INTEREST_RING,
       "border-opacity": 1,
     },
   };
+  const labelWrap = nodeLabelWrapStyle();
   if (usesMapNodeStyle()) {
     return [
       {
         selector: "node",
         style: {
           label: "data(label)",
-          "font-size": "10px",
+          "font-size": nodeLabelFontSizePx("map"),
+          "font-family": nodeLabelFontFamily(),
           width: nodeBodySize,
           height: nodeBodySize,
           "background-color": nodeColor,
-          "text-wrap": "wrap",
-          "text-max-width": "70px",
+          "text-wrap": labelWrap.wrap,
+          "text-max-width": labelWrap.maxWidth,
           "text-valign": "bottom",
           "text-halign": "center",
           "text-margin-y": 4,
@@ -3154,7 +3874,8 @@ function networkStyles() {
           "border-color": "#6ba3c1",
           "border-opacity": 0.85,
           label: "data(label)",
-          "font-size": "11px",
+          "font-size": nodeLabelFontSizePx("cluster"),
+          "font-family": nodeLabelFontFamily(),
           "font-weight": 700,
           color: "#1b4d5c",
           "text-valign": "center",
@@ -3185,12 +3906,13 @@ function networkStyles() {
       selector: "node",
       style: {
         label: "data(label)",
-        "font-size": "11px",
+        "font-size": nodeLabelFontSizePx("classic"),
+        "font-family": nodeLabelFontFamily(),
         width: nodeBodySize,
         height: nodeBodySize,
         "background-color": nodeColor,
-        "text-wrap": "ellipsis",
-        "text-max-width": "80px",
+        "text-wrap": labelWrap.wrap,
+        "text-max-width": labelWrap.maxWidth,
         "text-valign": "bottom",
         "text-margin-y": 6,
         color: "#1a1f2b",
@@ -3368,7 +4090,7 @@ function renderNetwork(edges) {
       data: {
         id: name,
         fullName: name,
-        label: formatNodeLabel(name),
+        label: nodeLabelText(name),
         degree: degree.get(name) || 1,
         role: groupInfo ? groupInfo.id : added ? "added" : "neighbor",
         groupName: groupInfo ? groupInfo.name : added ? "Added" : "Neighbor",
@@ -3517,8 +4239,8 @@ function composeNetworkPngWithLegend(graphSource) {
       const rowH = 22 * scale;
       const gap = 18 * scale;
       const noteLineH = 18 * scale;
-      const bg = "#fffdf8";
-      const muted = "#6b645b";
+      const bg = "#ffffff";
+      const muted = "#6b7280";
       const font = `"Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif`;
       const items = networkLegendItems();
       const notes = networkLegendNotes();
@@ -3587,7 +4309,7 @@ function saveNetworkPng() {
   }
   const png = cy.png({
     output: "blob-promise",
-    bg: "#fffdf8",
+    bg: "#ffffff",
     full: true,
     scale: 2,
     maxWidth: 4096,
@@ -3629,7 +4351,7 @@ function saveHeatmapPng() {
     canvas.width = w;
     canvas.height = h;
     const ctx = canvas.getContext("2d");
-    ctx.fillStyle = "#fffdf8";
+    ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, w, h);
     for (const c of usable) ctx.drawImage(c, 0, 0);
   }
@@ -3689,29 +4411,65 @@ function renderHeatmap(edges) {
       data: matrix,
     },
   };
+  const host = el("heatmapWrap") || el("heatmap").parentElement;
+  const longest = labels.reduce((n, name) => Math.max(n, String(name).length), 0);
+  const cssH = Math.min(760, Math.max(580, 320 + labels.length * 16 + Math.min(longest, 36) * 4));
+  const cssW = Math.max(host.clientWidth || 0, 640);
   if (cxChart) {
-    el("heatmap").innerHTML = "";
+    host.innerHTML = "";
+    const next = document.createElement("canvas");
+    next.id = "heatmap";
+    host.appendChild(next);
+    cxChart = null;
   }
+  const canvas = el("heatmap");
+  canvas.width = cssW;
+  canvas.height = cssH;
+  canvas.style.width = "100%";
+  canvas.style.height = `${cssH}px`;
+  canvas.removeAttribute("data-maxwidth");
+  canvas.removeAttribute("data-maxheight");
   cxChart = new CanvasXpress("heatmap", cxData, {
     graphType: "Heatmap",
     heatmapIndicatorHistogram: false,
     showTransition: false,
     showToolbar: false,
+    maxSmpStringLen: 200,
+    maxVarStringLen: 200,
+    smpTextRotate: 0,
+    varTextRotate: 45,
   });
 }
 
 // ---------- Wire up events ----------
 collectionSelect.addEventListener("change", () => {
   closeAllGroupMenus();
+  updateLandingCollectionHint();
   if (bulkLookupDialog.open) renderBulkLookupResults();
   if (fromGenesDialog.open) {
     fromGenesPrefillKey = null;
     renderFromGenesResults();
   }
+  if (startMode === "keywords") renderLandingKeywords();
+  if (startMode === "genes" && landingGenesList && landingGenesList.value.trim()) renderLandingGenes();
 });
-addGroupButton.addEventListener("click", () => {
+function addComparisonGroup() {
   addGroupRow(makeGroup());
-});
+  openSeedsPanel();
+}
+addGroupButton.addEventListener("click", addComparisonGroup);
+if (compareGroupButton) {
+  compareGroupButton.addEventListener("click", (evt) => {
+    evt.preventDefault();
+    addComparisonGroup();
+  });
+}
+if (seedsSummary) {
+  seedsSummary.addEventListener("click", (evt) => {
+    evt.preventDefault();
+    toggleSeedsPanel();
+  });
+}
 topNInput.addEventListener("input", updateFetchCounter);
 queryForm.addEventListener("submit", (e) => {
   e.preventDefault();
@@ -3719,6 +4477,7 @@ queryForm.addEventListener("submit", (e) => {
 });
 resetButton.addEventListener("click", onReset);
 saveNetworkPngButton.addEventListener("click", saveNetworkPng);
+if (saveNetworkCsvButton) saveNetworkCsvButton.addEventListener("click", exportCsv);
 saveHeatmapPngButton.addEventListener("click", saveHeatmapPng);
 exportCsvButton.addEventListener("click", exportCsv);
 copyPathwaysButton.addEventListener("click", copyVisiblePathways);
@@ -3753,16 +4512,45 @@ el("edgeTable").addEventListener("click", (evt) => {
 copyLinkButton.addEventListener("click", copyShareLink);
 corrSlider.addEventListener("input", onSliderChange);
 pSlider.addEventListener("input", () => {
+  pCutoffInput.value = pSlider.value;
   updateSliderLabels();
+  writeUrlState();
   if (cachedEdges) renderAll();
 });
 if (thresholdBannerClose) {
   thresholdBannerClose.addEventListener("click", hideThresholdBanner);
 }
 layoutSelect.addEventListener("change", applyLayout);
-document.querySelectorAll(".style-toggle").forEach((btn) => {
+document.querySelectorAll(".style-toggle[data-style]").forEach((btn) => {
   btn.addEventListener("click", () => setNetworkStyle(btn.dataset.style, true));
 });
+document.querySelectorAll(".name-toggle").forEach((btn) => {
+  btn.addEventListener("click", () => setFullNodeNames(btn.dataset.names === "full"));
+});
+document.querySelectorAll(".size-toggle").forEach((btn) => {
+  btn.addEventListener("click", () => setNodeLabelSize(btn.dataset.size));
+});
+document.querySelectorAll(".font-toggle").forEach((btn) => {
+  btn.addEventListener("click", () => setNodeLabelFont(btn.dataset.font));
+});
+function setInterestPanelOpen(open) {
+  if (!interestGenesPanel) return;
+  interestGenesPanel.hidden = !open;
+  if (interestSearchButton) {
+    interestSearchButton.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+  if (open && interestGenesList) interestGenesList.focus();
+}
+
+if (interestSearchButton && interestGenesPanel) {
+  interestSearchButton.addEventListener("click", () => {
+    closeGraphAddMenu();
+    setInterestPanelOpen(interestGenesPanel.hidden);
+  });
+}
+if (interestGenesClose) {
+  interestGenesClose.addEventListener("click", () => setInterestPanelOpen(false));
+}
 fitButton.addEventListener("click", fitNetwork);
 graphShowAll.addEventListener("click", () => {
   hiddenGraphNames = new Set();
@@ -3789,6 +4577,7 @@ graphAddInput.addEventListener("keydown", (evt) => {
     submitGraphAddFromInput();
   } else if (evt.key === "Escape") {
     evt.preventDefault();
+    evt.stopPropagation();
     closeGraphAddMenu();
   }
 });
@@ -3832,6 +4621,11 @@ fromGenesQCutoff.addEventListener("input", () => {
 fromGenesSelectAll.addEventListener("click", () => setVisibleFromGenesSelection(true));
 fromGenesClearVisible.addEventListener("click", () => setVisibleFromGenesSelection(false));
 fromGenesDone.addEventListener("click", () => fromGenesDialog.close());
+if (fromGenesBuild) {
+  fromGenesBuild.addEventListener("click", () => {
+    buildFromGenesDialog();
+  });
+}
 fromGenesDialog.addEventListener("close", () => {
   fromGenesGroup = null;
   fromGenesItems = [];
@@ -3851,10 +4645,25 @@ document.addEventListener("click", (evt) => {
   for (const g of groups) {
     if (g.combobox && !g.combobox.containerEl.contains(evt.target)) closeGroupMenu(g);
   }
+  if (landingPathwayCb && landingPathwayCb.containerEl && !landingPathwayCb.containerEl.contains(evt.target)) {
+    closeLandingPathwayMenu();
+  }
   if (tissueCombobox && !tissueCombobox.contains(evt.target)) closeTissueMenu();
   if (el("graphAddInput") && !el("graphAddInput").closest(".graph-add").contains(evt.target)) {
     closeGraphAddMenu();
   }
+  if (seedsPanel && !seedsPanel.hidden && !document.querySelector("dialog[open]")) {
+    const path = typeof evt.composedPath === "function" ? evt.composedPath() : [];
+    const inPanel = seedsPanel.contains(evt.target) || path.includes(seedsPanel);
+    const inSummary = seedsSummary && (seedsSummary.contains(evt.target) || path.includes(seedsSummary));
+    const inCompare = compareGroupButton && (compareGroupButton.contains(evt.target) || path.includes(compareGroupButton));
+    if (!inPanel && !inSummary && !inCompare) closeSeedsPanel();
+  }
+});
+document.addEventListener("keydown", (evt) => {
+  if (evt.key !== "Escape") return;
+  if (document.querySelector("dialog[open]")) return;
+  closeSeedsPanel();
 });
 
 tissueSummary.addEventListener("click", (evt) => {
@@ -3927,16 +4736,53 @@ document.querySelectorAll(".example-chip[data-pathway], .example-chip[data-pathw
     }
     const topN = btn.dataset.topN === undefined || btn.dataset.topN === "" ? null : Number(btn.dataset.topN);
     const corr = btn.dataset.corr === undefined || btn.dataset.corr === "" ? null : Number(btn.dataset.corr);
-    runExample({ groups, collection: btn.dataset.collection, topN, corr });
+    loadExample({ groups, collection: btn.dataset.collection, topN, corr });
   });
 });
-const emptyFromGenes = el("emptyFromGenes");
-if (emptyFromGenes) {
-  emptyFromGenes.addEventListener("click", () => {
-    if (groups[0]) openFromGenes(groups[0]);
+document.querySelectorAll(".landing-tab").forEach((btn) => {
+  btn.addEventListener("click", () => setStartMode(btn.dataset.start, true));
+});
+if (landingKeywordTerms) {
+  landingKeywordTerms.addEventListener("input", renderLandingKeywords);
+}
+document.querySelectorAll('input[name="landingKeywordMode"]').forEach((radio) => {
+  radio.addEventListener("change", renderLandingKeywords);
+});
+if (landingKeywordSelectAll) landingKeywordSelectAll.addEventListener("click", () => setVisibleLandingKeywordSelection(true));
+if (landingKeywordClearVisible) landingKeywordClearVisible.addEventListener("click", () => setVisibleLandingKeywordSelection(false));
+document.querySelectorAll(".landing-keyword-example").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    if (!landingKeywordTerms) return;
+    landingKeywordTerms.value = btn.dataset.terms || "";
+    renderLandingKeywords();
+    landingKeywordTerms.focus();
+  });
+});
+if (landingGenesFind) landingGenesFind.addEventListener("click", () => renderLandingGenes());
+if (landingGenesSelectAll) landingGenesSelectAll.addEventListener("click", () => setVisibleLandingGeneSelection(true));
+if (landingGenesClearVisible) landingGenesClearVisible.addEventListener("click", () => setVisibleLandingGeneSelection(false));
+if (landingGenesAdd) {
+  landingGenesAdd.addEventListener("click", () => {
+    const added = addLandingGeneSelection();
+    if (added === 0 && landingGenesStatus) {
+      landingGenesStatus.textContent = landingGeneChecked.size
+        ? "Those pathways are already in the query."
+        : "Select one or more pathways, then Add selected.";
+    }
   });
 }
+if (landingGenesBuild) landingGenesBuild.addEventListener("click", () => buildFromLandingGenes());
+if (landingGenesTable) landingGenesTable.querySelector("thead").addEventListener("click", onLandingGeneSortClick);
+document.querySelectorAll(".landing-gene-example").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const genes = (btn.dataset.genes || "").trim().split(/\s+/).filter(Boolean);
+    if (landingGenesList) landingGenesList.value = genes.join("\n");
+    renderLandingGenes();
+    if (landingGenesList) landingGenesList.focus();
+  });
+});
 
+attachLandingPathwayEvents();
 setHomeLink();
 resetGroups();
 init();

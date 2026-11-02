@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <title>PCxN Explore</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Which pathways correlate with the one you are studying?">
+<meta name="description" content="Pathway Correlation Explorer">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-dt@3.0.4/css/dataTables.dataTables.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/canvasxpress@69.6.1/src/canvasXpress.css">
-<link rel="stylesheet" href="style.css?v=10">
+<link rel="stylesheet" href="style.css?v=30">
 </head>
 <body>
 
@@ -37,55 +37,60 @@
   <button type="button" id="errorDismiss" class="text-btn">dismiss</button>
 </div>
 
-<main>
-  <form id="query-form" aria-label="Query">
-    <div class="field-row">
-      <span class="field-label" id="tissueListLabel">Tissue</span>
-      <div id="tissueCombobox" class="combobox tissue-combobox">
-        <button type="button" id="tissueSummary" class="tissue-summary" aria-haspopup="listbox" aria-expanded="false" aria-controls="tissueMenu" aria-labelledby="tissueListLabel">combined</button>
-        <div id="tissueMenu" class="combobox-menu tissue-menu" hidden>
-          <input type="search" id="tissueFilter" class="tissue-filter" placeholder="Filter tissues…" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-controls="tissueList" aria-label="Filter tissues">
-          <ul id="tissueList" class="tissue-menu-list" role="listbox" aria-labelledby="tissueListLabel"></ul>
+<main class="landing-only">
+  <form id="query-form" aria-label="Query" hidden>
+    <div class="query-toolbar">
+      <div class="field-row toolbar-field toolbar-tissue">
+        <span class="field-label" id="tissueListLabel">Tissue</span>
+        <div id="tissueCombobox" class="combobox tissue-combobox">
+          <button type="button" id="tissueSummary" class="tissue-summary" aria-haspopup="listbox" aria-expanded="false" aria-controls="tissueMenu" aria-labelledby="tissueListLabel" title="combined is an average across all tissues">combined</button>
+          <div id="tissueMenu" class="combobox-menu tissue-menu" hidden>
+            <input type="search" id="tissueFilter" class="tissue-filter" placeholder="Filter tissues…" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-controls="tissueList" aria-label="Filter tissues">
+            <ul id="tissueList" class="tissue-menu-list" role="listbox" aria-labelledby="tissueListLabel"></ul>
+          </div>
         </div>
+        <div id="tissueChipList" class="chip-list tissue-chip-list" hidden></div>
       </div>
-      <div id="tissueChipList" class="chip-list tissue-chip-list"></div>
-      <p class="hint">combined is an average across all tissues.</p>
+      <div class="field-row toolbar-field toolbar-collection">
+        <label for="collectionSelect">Database/Collection</label>
+        <select id="collectionSelect">
+          <option value="">All</option>
+        </select>
+      </div>
+      <div class="field-row toolbar-field toolbar-num">
+        <label for="topNInput">Top N</label>
+        <input id="topNInput" type="number" min="0" step="1" value="10">
+      </div>
+      <div class="field-row toolbar-field toolbar-num">
+        <label for="corrCutoffInput" title="Absolute correlation (|r|). Keep edges whose correlation is stronger than this cutoff, ignoring sign.">|r| &gt;</label>
+        <input id="corrCutoffInput" type="number" min="0" max="1" step="0.01" value="0.5" title="Absolute correlation (|r|). Keep edges whose correlation is stronger than this cutoff, ignoring sign.">
+      </div>
+      <div class="field-row toolbar-field toolbar-num">
+        <label for="pCutoffInput" title="False discovery rate. Keep edges with FDR below this cutoff.">FDR &lt;</label>
+        <input id="pCutoffInput" type="number" min="0" max="1" step="0.001" value="0.05" title="False discovery rate. Keep edges with FDR below this cutoff.">
+      </div>
+      <div class="field-row toolbar-field toolbar-seeds">
+        <span class="field-label" id="seedsSummaryLabel">Query pathways</span>
+        <button type="button" id="seedsSummary" class="seeds-summary" aria-haspopup="true" aria-expanded="false" aria-controls="seedsPanel" title="Click to see or edit the pathways in this query.">Click to view</button>
+      </div>
+      <div class="toolbar-compare">
+        <button type="button" id="compareGroupButton" class="text-btn">Compare another group</button>
+      </div>
+      <div class="toolbar-actions">
+        <button id="goButton" type="submit">Build network</button>
+        <button id="resetButton" type="button">Reset</button>
+      </div>
     </div>
 
-    <div class="field-row">
-      <label for="collectionSelect">Collection</label>
-      <select id="collectionSelect">
-        <option value="">All</option>
-      </select>
-    </div>
-
-    <div class="field-row groups-field">
+    <div id="seedsPanel" class="seeds-panel" hidden>
+      <p class="hint">These are the pathways in the current query. Add a group to compare two sets on the same network.</p>
       <div class="groups-header">
         <label>Pathway groups</label>
         <button type="button" id="addGroupButton" class="text-btn">+ Add group</button>
       </div>
+      <div id="groupTabList" class="tab-list group-tab-list" role="tablist" aria-label="Groups" hidden></div>
       <div id="groupsContainer"></div>
       <p id="fetchCounter" class="hint"></p>
-    </div>
-
-    <div class="param-grid">
-      <div class="field-row">
-        <label for="topNInput">Top N neighbors</label>
-        <input id="topNInput" type="number" min="0" step="1" value="10">
-      </div>
-      <div class="field-row">
-        <label for="corrCutoffInput">Absolute correlation &gt;</label>
-        <input id="corrCutoffInput" type="number" min="0" max="1" step="0.01" value="0.5">
-      </div>
-      <div class="field-row">
-        <label for="pCutoffInput">p-value &lt;</label>
-        <input id="pCutoffInput" type="number" min="0" max="1" step="0.001" value="0.05">
-      </div>
-    </div>
-
-    <div class="field-row buttons">
-      <button id="goButton" type="submit">Build network</button>
-      <button id="resetButton" type="button">Reset</button>
     </div>
 
     <p id="index-meta" class="status"></p>
@@ -93,23 +98,108 @@
   </form>
 
   <div id="workspace">
-    <section id="empty-state">
-      <p class="purpose">Which pathways correlate with the one you are studying?</p>
-      <p>PCxN measures how pathways rise and fall together across thousands of public expression experiments — including pathways that share no genes at all.</p>
-      <p>Pick a tissue and a pathway collection, add one or more pathways, then build the network. You'll get the neighbourhood three ways: a network, an edge table, and a heatmap.</p>
-      <p class="examples">Examples:
-        <button type="button" class="example-chip" data-pathway="KEGG_P53_SIGNALING_PATHWAY" data-collection="KEGG" data-corr="0.2">KEGG p53</button>,
-        <button type="button" class="example-chip" data-pathway="KEGG_WNT_SIGNALING_PATHWAY" data-collection="KEGG" data-corr="0.2">Wnt</button>,
-        <button type="button" class="example-chip" data-pathway="KEGG_NOTCH_SIGNALING_PATHWAY" data-collection="KEGG" data-corr="0.2">Notch</button>,
-        <button type="button" class="example-chip" data-pathways="KEGG_CITRATE_CYCLE_TCA_CYCLE,KEGG_OXIDATIVE_PHOSPHORYLATION,REACTOME_MITOCHONDRIAL_FATTY_ACID_BETA_OXIDATION,KEGG_VALINE_LEUCINE_AND_ISOLEUCINE_DEGRADATION,KEGG_PROPANOATE_METABOLISM,KEGG_FATTY_ACID_METABOLISM,REACTOME_MITOCHONDRIAL_PROTEIN_IMPORT,KEGG_PYRUVATE_METABOLISM" data-collection="" data-group-name="mitochondrial energy production">mitochondrial energy production</button>,
-        <button type="button" class="example-chip" data-pathways="KEGG_MEDICUS_REFERENCE_TLR1_2_4_NFKB_SIGNALING_PATHWAY,KEGG_CHEMOKINE_SIGNALING_PATHWAY,BIOCARTA_NFKB_PATHWAY,REACTOME_INTERFERON_GAMMA_SIGNALING,KEGG_CYTOKINE_CYTOKINE_RECEPTOR_INTERACTION,PID_IL6_7_PATHWAY,KEGG_NOD_LIKE_RECEPTOR_SIGNALING_PATHWAY,BIOCARTA_MONOCYTE_PATHWAY" data-collection="" data-group-name="innate immunity and inflammation">innate immunity and inflammation</button>,
-        <button type="button" class="example-chip" data-pathways="KEGG_MEDICUS_REFERENCE_TLR1_2_4_NFKB_SIGNALING_PATHWAY,KEGG_CHEMOKINE_SIGNALING_PATHWAY,BIOCARTA_NFKB_PATHWAY,REACTOME_INTERFERON_GAMMA_SIGNALING,KEGG_CYTOKINE_CYTOKINE_RECEPTOR_INTERACTION,PID_IL6_7_PATHWAY,KEGG_NOD_LIKE_RECEPTOR_SIGNALING_PATHWAY,BIOCARTA_MONOCYTE_PATHWAY" data-group-name="innate immunity and inflammation" data-pathways2="KEGG_CITRATE_CYCLE_TCA_CYCLE,KEGG_OXIDATIVE_PHOSPHORYLATION,REACTOME_MITOCHONDRIAL_FATTY_ACID_BETA_OXIDATION,KEGG_VALINE_LEUCINE_AND_ISOLEUCINE_DEGRADATION,KEGG_PROPANOATE_METABOLISM,KEGG_FATTY_ACID_METABOLISM,REACTOME_MITOCHONDRIAL_PROTEIN_IMPORT,KEGG_PYRUVATE_METABOLISM" data-group-name2="mitochondrial energy production" data-collection="" data-top-n="0" data-corr="0.2">innate immunity vs mitochondrial energy</button>
-      </p>
-      <p class="empty-genes">Starting from a gene list instead? <button type="button" id="emptyFromGenes" class="example-chip">Find matching pathways</button></p>
-      <p class="empty-meta"><span id="emptyCatalog"></span></p>
-      <figure class="homepage-figure">
-        <img src="homepageimage.jpeg" alt="Example network, heatmap, and edge table views" loading="lazy" decoding="async" width="1440" height="833">
-      </figure>
+    <section id="landing">
+      <p class="purpose">Pathway Correlation Explorer</p>
+      <p>Start with a pathway name, a keyword, or a gene list. Click a linked example to fill the search box and default parameters. Then set tissue, database/collection, and cutoffs in the bar below and build the network.</p>
+
+      <div class="tab-list landing-tab-list" role="tablist" aria-label="Search by">
+        <button type="button" class="tab landing-tab" role="tab" id="start-pathways" data-start="pathways" aria-selected="true" aria-controls="landingPanelPathways">Pathways</button>
+        <button type="button" class="tab landing-tab" role="tab" id="start-keywords" data-start="keywords" aria-selected="false" aria-controls="landingPanelKeywords">Keywords</button>
+        <button type="button" class="tab landing-tab" role="tab" id="start-genes" data-start="genes" aria-selected="false" aria-controls="landingPanelGenes">Genes</button>
+      </div>
+
+      <div id="landingPanelPathways" class="landing-panel" role="tabpanel" aria-labelledby="start-pathways">
+        <p class="examples">
+          <span class="examples-hint">Click a linked example to fill the search box and default parameters.</span>
+          Examples:
+          <button type="button" class="example-chip" data-pathway="KEGG_P53_SIGNALING_PATHWAY" data-collection="KEGG" data-corr="0.2" title="Fill the search box and default parameters">KEGG p53</button>,
+          <button type="button" class="example-chip" data-pathway="KEGG_WNT_SIGNALING_PATHWAY" data-collection="KEGG" data-corr="0.2" title="Fill the search box and default parameters">Wnt</button>,
+          <button type="button" class="example-chip" data-pathway="KEGG_NOTCH_SIGNALING_PATHWAY" data-collection="KEGG" data-corr="0.2" title="Fill the search box and default parameters">Notch</button>,
+          <button type="button" class="example-chip" data-pathways="KEGG_CITRATE_CYCLE_TCA_CYCLE,KEGG_OXIDATIVE_PHOSPHORYLATION,REACTOME_MITOCHONDRIAL_FATTY_ACID_BETA_OXIDATION,KEGG_VALINE_LEUCINE_AND_ISOLEUCINE_DEGRADATION,KEGG_PROPANOATE_METABOLISM,KEGG_FATTY_ACID_METABOLISM,REACTOME_MITOCHONDRIAL_PROTEIN_IMPORT,KEGG_PYRUVATE_METABOLISM" data-collection="" data-group-name="mitochondrial energy production" title="Fill the search box and default parameters">mitochondrial energy production</button>,
+          <button type="button" class="example-chip" data-pathways="KEGG_MEDICUS_REFERENCE_TLR1_2_4_NFKB_SIGNALING_PATHWAY,KEGG_CHEMOKINE_SIGNALING_PATHWAY,BIOCARTA_NFKB_PATHWAY,REACTOME_INTERFERON_GAMMA_SIGNALING,KEGG_CYTOKINE_CYTOKINE_RECEPTOR_INTERACTION,PID_IL6_7_PATHWAY,KEGG_NOD_LIKE_RECEPTOR_SIGNALING_PATHWAY,BIOCARTA_MONOCYTE_PATHWAY" data-collection="" data-group-name="innate immunity and inflammation" title="Fill the search box and default parameters">innate immunity and inflammation</button>,
+          <button type="button" class="example-chip" data-pathways="KEGG_MEDICUS_REFERENCE_TLR1_2_4_NFKB_SIGNALING_PATHWAY,KEGG_CHEMOKINE_SIGNALING_PATHWAY,BIOCARTA_NFKB_PATHWAY,REACTOME_INTERFERON_GAMMA_SIGNALING,KEGG_CYTOKINE_CYTOKINE_RECEPTOR_INTERACTION,PID_IL6_7_PATHWAY,KEGG_NOD_LIKE_RECEPTOR_SIGNALING_PATHWAY,BIOCARTA_MONOCYTE_PATHWAY" data-group-name="innate immunity and inflammation" data-pathways2="KEGG_CITRATE_CYCLE_TCA_CYCLE,KEGG_OXIDATIVE_PHOSPHORYLATION,REACTOME_MITOCHONDRIAL_FATTY_ACID_BETA_OXIDATION,KEGG_VALINE_LEUCINE_AND_ISOLEUCINE_DEGRADATION,KEGG_PROPANOATE_METABOLISM,KEGG_FATTY_ACID_METABOLISM,REACTOME_MITOCHONDRIAL_PROTEIN_IMPORT,KEGG_PYRUVATE_METABOLISM" data-group-name2="mitochondrial energy production" data-collection="" data-top-n="0" data-corr="0.2" title="Fill the search box and default parameters">innate immunity vs mitochondrial energy</button>
+        </p>
+        <div id="landingPathwayCombobox" class="combobox landing-combobox">
+          <label class="field-label" for="landingPathwayInput">Search pathway names</label>
+          <input id="landingPathwayInput" class="group-pathway-input" type="search" placeholder="Type a pathway name…" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-controls="landingPathwayMenu" aria-expanded="false">
+          <ul id="landingPathwayMenu" class="combobox-menu" role="listbox" hidden></ul>
+        </div>
+      </div>
+
+      <div id="landingPanelKeywords" class="landing-panel" role="tabpanel" aria-labelledby="start-keywords" hidden>
+        <p class="examples">
+          <span class="examples-hint">Click a linked example to fill the search box and default parameters.</span>
+          Examples:
+          <button type="button" class="example-chip landing-keyword-example" data-terms="p53" title="Fill the search box and default parameters">p53</button>,
+          <button type="button" class="example-chip landing-keyword-example" data-terms="wnt" title="Fill the search box and default parameters">Wnt</button>,
+          <button type="button" class="example-chip landing-keyword-example" data-terms="notch" title="Fill the search box and default parameters">Notch</button>,
+          <button type="button" class="example-chip landing-keyword-example" data-terms="mitochondrial" title="Fill the search box and default parameters">mitochondrial</button>
+        </p>
+        <label class="field-label" for="landingKeywordTerms">Search terms</label>
+        <textarea id="landingKeywordTerms" rows="3" placeholder="One term per line, or comma-separated"></textarea>
+        <p id="landingCollectionHint" class="hint">Matches pathway names in the current database/collection (All by default).</p>
+        <fieldset class="bulk-mode landing-bulk-mode">
+          <legend>Match</legend>
+          <label><input type="radio" name="landingKeywordMode" value="or" checked> OR — name contains any term</label>
+          <label><input type="radio" name="landingKeywordMode" value="and"> AND — name contains every term</label>
+        </fieldset>
+        <div class="bulk-lookup-toolbar">
+          <span id="landingKeywordCount"></span>
+          <button type="button" id="landingKeywordSelectAll" class="text-btn">Select all</button>
+          <button type="button" id="landingKeywordClearVisible" class="text-btn">Clear visible</button>
+        </div>
+        <ul id="landingKeywordList" class="bulk-lookup-list"></ul>
+      </div>
+
+      <div id="landingPanelGenes" class="landing-panel" role="tabpanel" aria-labelledby="start-genes" hidden>
+        <label class="field-label" for="landingGenesList">Gene symbols or Entrez IDs</label>
+        <p class="from-genes-examples">
+          <span class="examples-hint">Click a linked example to fill the search box and default parameters.</span>
+          Examples:
+          <button type="button" class="example-chip landing-gene-example" data-genes="CD68 ITGAM ITGAX CD14 AIF1 TYROBP FCER1G FCGR2A FCGR3A C1QA C1QB C1QC CCL2 CCL3 CCL4 CCL5 CXCL8 CXCL9 CXCL10 IL6 IL1B IL1RN TNF TLR2 TLR4 NLRP3 CASP1 SPP1 LYZ MMP9 MMP12 CTSS MSR1 MRC1 CD163 TREM2 LGALS3 S100A8 S100A9 SOCS3 STAT1 IRF8 PTGS2 SERPINE1 VCAM1 ICAM1 PTPRC CYBB CSF1R CD44" title="Fill the search box and default parameters">Adipose inflammation</button>,
+          <button type="button" class="example-chip landing-gene-example" data-genes="NDUFA1 NDUFA2 NDUFA5 NDUFA8 NDUFB3 NDUFB5 NDUFS1 NDUFS3 NDUFV2 SDHA SDHB SDHC SDHD UQCRB UQCRC1 UQCRC2 UQCRFS1 CYC1 COX4I1 COX5A COX5B COX6C COX7B COX8A CS ACO2 IDH3A IDH3B OGDH SUCLA2 FH MDH2 PDHA1 PDHB DLAT DLD CPT1B CPT2 ACADM ACADS ACADVL HADHA HADHB ECHS1 ACAA2 ETFA ETFB SLC25A20 PPARGC1A ADIPOQ" title="Fill the search box and default parameters">Mitochondrial oxidative capacity</button>
+        </p>
+        <p class="from-genes-examples-note">illustrative marker genes, not experimental data</p>
+        <textarea id="landingGenesList" rows="5" placeholder="One per line, or comma-separated"></textarea>
+        <div class="from-genes-cutoff">
+          <label for="landingGenesQCutoff">q-value &lt;</label>
+          <input id="landingGenesQCutoff" type="number" min="0" max="1" step="0.001" value="0.05">
+          <button type="button" id="landingGenesFind">Find pathways</button>
+        </div>
+        <p id="landingGenesStatus" class="hint"></p>
+        <div class="bulk-lookup-toolbar">
+          <span id="landingGenesCount"></span>
+          <button type="button" id="landingGenesSelectAll" class="text-btn">Select all</button>
+          <button type="button" id="landingGenesClearVisible" class="text-btn">Clear visible</button>
+        </div>
+        <div class="from-genes-table-wrap">
+          <table id="landingGenesTable">
+            <thead>
+              <tr>
+                <th></th>
+                <th data-sort="name" aria-sort="none">Pathway</th>
+                <th data-sort="size" aria-sort="none">Size</th>
+                <th data-sort="overlap" aria-sort="none">Overlap</th>
+                <th data-sort="fold" aria-sort="none">Fold</th>
+                <th data-sort="q" aria-sort="ascending">q</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="bulk-lookup-actions landing-gene-actions">
+          <button type="button" id="landingGenesAdd">Add selected</button>
+          <button type="button" id="landingGenesBuild">Add and build</button>
+        </div>
+      </div>
+
+      <div id="landingSeedBar" class="landing-seed-bar" hidden>
+        <p class="landing-seed-label">Selected pathways</p>
+        <div id="landingSeedChips" class="chip-list"></div>
+        <p class="hint">These pathways are in the query. Use the bar at the bottom to review tissue, database/collection, and cutoffs, then Build network. Click <strong>Query pathways</strong> in that bar to see or edit the list, or Compare another group to color two sets on the same network.</p>
+      </div>
+
+      <div id="emptyCatalog" class="catalog-stat" hidden></div>
     </section>
 
     <section id="results" hidden>
@@ -119,45 +209,85 @@
       </div>
       <div id="tissueTabList" class="tab-list tissue-tab-list" role="tablist" aria-label="Tissues" hidden></div>
       <div class="tab-list view-tab-list" role="tablist" aria-label="Result views">
-        <button type="button" class="tab view-tab" role="tab" id="tab-network" data-tab="network" aria-selected="true">Network</button>
-        <button type="button" class="tab view-tab" role="tab" id="tab-table" data-tab="table" aria-selected="false">Edge table</button>
-        <button type="button" class="tab view-tab" role="tab" id="tab-heatmap" data-tab="heatmap" aria-selected="false">Heatmap</button>
+        <button type="button" class="tab view-tab" role="tab" id="tab-network" data-tab="network" aria-selected="true">Network graph</button>
+        <button type="button" class="tab view-tab" role="tab" id="tab-table" data-tab="table" aria-selected="false">Network data table</button>
+        <button type="button" class="tab view-tab" role="tab" id="tab-heatmap" data-tab="heatmap" aria-selected="false">Network Heatmap</button>
       </div>
 
       <section id="live-filters" aria-label="Live filters" hidden>
         <div class="field-row">
-          <label for="corrSlider">Correlation cutoff: <output id="corrSliderValue"></output></label>
-          <input id="corrSlider" type="range" min="0" max="1" step="0.01" value="0.5">
+          <label for="corrSlider" title="Absolute correlation (|r|). Keep edges whose correlation is stronger than this cutoff, ignoring sign.">|r| cutoff: <output id="corrSliderValue"></output></label>
+          <input id="corrSlider" type="range" min="0" max="1" step="0.01" value="0.5" title="Absolute correlation (|r|). Keep edges whose correlation is stronger than this cutoff, ignoring sign.">
         </div>
         <div class="field-row">
-          <label for="pSlider">p-value cutoff: <output id="pSliderValue"></output></label>
-          <input id="pSlider" type="range" min="0.001" max="0.05" step="0.001" value="0.05">
+          <label for="pSlider" title="False discovery rate. Keep edges with FDR below this cutoff.">FDR cutoff: <output id="pSliderValue"></output></label>
+          <input id="pSlider" type="range" min="0.001" max="0.05" step="0.001" value="0.05" title="False discovery rate. Keep edges with FDR below this cutoff.">
         </div>
       </section>
 
       <section id="network-section" hidden>
-        <div class="section-head">
-          <h2>Network</h2>
+        <div class="section-head network-section-head">
+          <h2>Network graph</h2>
           <div class="network-tools">
-            <div class="network-style" role="group" aria-label="Network style">
-              <span class="field-label">Style</span>
-              <button type="button" class="style-toggle" data-style="enrichmentmap" aria-pressed="true">Classic</button>
-              <button type="button" class="style-toggle" data-style="hubmap" aria-pressed="false">HubMap</button>
+            <div class="network-tools-row">
+              <div class="network-style" role="group" aria-label="Network style">
+                <span class="field-label">Style</span>
+                <button type="button" class="style-toggle" data-style="enrichmentmap" aria-pressed="true">Classic</button>
+                <button type="button" class="style-toggle" data-style="hubmap" aria-pressed="false">HubMap</button>
+              </div>
+              <div class="network-style" role="group" aria-label="Pathway names on the graph">
+                <span class="field-label">Pathway names</span>
+                <button type="button" class="style-toggle name-toggle" data-names="short" aria-pressed="true" title="Abbreviated pathway names on the graph">Short</button>
+                <button type="button" class="style-toggle name-toggle" data-names="full" aria-pressed="false" title="Full catalog names on the graph">Full</button>
+              </div>
+              <div class="network-style" role="group" aria-label="Pathway name size">
+                <span class="field-label">Size</span>
+                <button type="button" class="style-toggle size-toggle" data-size="small" aria-pressed="false" title="Small pathway names">S</button>
+                <button type="button" class="style-toggle size-toggle" data-size="medium" aria-pressed="true" title="Medium pathway names">M</button>
+                <button type="button" class="style-toggle size-toggle" data-size="large" aria-pressed="false" title="Large pathway names">L</button>
+              </div>
+              <div class="network-style" role="group" aria-label="Pathway name font">
+                <span class="field-label">Font</span>
+                <button type="button" class="style-toggle font-toggle" data-font="sans" aria-pressed="true" title="Sans-serif pathway names">Sans</button>
+                <button type="button" class="style-toggle font-toggle" data-font="serif" aria-pressed="false" title="Serif pathway names">Serif</button>
+                <button type="button" class="style-toggle font-toggle" data-font="mono" aria-pressed="false" title="Monospace pathway names">Mono</button>
+              </div>
+              <label for="layoutSelect" title="How nodes are arranged. This does not change the correlations. Clustered pulls related pathways together. Spread out is similar but looser. Seed in the center puts query pathways in the middle. Ring places every node on a circle. Grid uses even rows and columns.">Layout
+                <select id="layoutSelect" title="How nodes are arranged. This does not change the correlations.">
+                  <option value="fcose" selected>Clustered (default)</option>
+                  <option value="cose">Spread out</option>
+                  <option value="concentric">Seed in the center</option>
+                  <option value="circle">Ring</option>
+                  <option value="grid">Grid</option>
+                </select>
+              </label>
             </div>
-            <label for="layoutSelect">Layout
-              <select id="layoutSelect">
-                <option value="fcose" selected>fcose</option>
-                <option value="cose">cose</option>
-                <option value="concentric">concentric</option>
-                <option value="circle">circle</option>
-                <option value="grid">grid</option>
-              </select>
-            </label>
-            <button type="button" id="fitButton">Fit</button>
-            <button type="button" id="saveNetworkPngButton">Save PNG</button>
+            <div class="network-tools-row">
+              <button type="button" id="interestSearchButton" aria-expanded="false" aria-controls="interestGenesPanel">Search genes in network</button>
+              <button type="button" id="fitButton">Fit</button>
+              <button type="button" id="saveNetworkPngButton">Save PNG</button>
+              <button type="button" id="saveNetworkCsvButton">Export CSV</button>
+            </div>
           </div>
         </div>
         <p id="node-info" class="node-info"></p>
+        <div id="interestGenesPanel" class="interest-genes-panel" hidden>
+          <div class="interest-genes-panel-head">
+            <h3>Search genes in network</h3>
+            <button type="button" id="interestGenesClose">Hide</button>
+          </div>
+          <div class="interest-genes">
+            <label for="interestGenesList">Genes of interest</label>
+            <p class="hint">Paste symbols or Entrez IDs, then Apply. Matching pathways get a brown ring on the graph below. This list is independent of gene lookup used to pick seed pathways.</p>
+            <textarea id="interestGenesList" rows="4" placeholder="One per line, or comma-separated"></textarea>
+            <div class="interest-genes-actions">
+              <button type="button" id="interestGenesApply">Apply</button>
+              <button type="button" id="interestGenesFromLookup" class="text-btn">Use gene lookup list</button>
+              <button type="button" id="interestGenesClear" class="text-btn">Clear</button>
+            </div>
+            <p id="interestGenesStatus" class="hint"></p>
+          </div>
+        </div>
         <div id="cyWrap" class="cy-wrap">
           <div id="cyNav" class="cy-nav" role="toolbar" aria-label="Network navigation">
             <button type="button" id="cyZoomIn" aria-label="Zoom in">+</button>
@@ -176,7 +306,7 @@
         <p id="classicLegendNote" class="legend-note" hidden>Red edges are positive correlation, blue negative.</p>
         <p id="emLegendNote" class="legend-note">Red edges are positive correlation, blue negative. Click a node to highlight its neighbors.</p>
         <p id="hubmapLegendNote" class="legend-note" hidden>Named clusters group related pathways. Red edges are positive correlation, blue negative. Click a node or a table row to highlight neighbors.</p>
-        <p id="interestLegendNote" class="legend-note" hidden>Orange ring: the pathway contains genes of interest.</p>
+        <p id="interestLegendNote" class="legend-note" hidden>Brown ring: the pathway contains genes of interest.</p>
         <div class="graph-nodes">
           <div class="section-head">
             <h3>Pathways in this graph</h3>
@@ -185,18 +315,7 @@
               <button type="button" id="graphShowAll" hidden>Show all</button>
             </div>
           </div>
-          <p class="graph-node-note">Click a pathway name to select it on the network. Uncheck a row to take that node out of the graph. Linked Pathways opens the partners it connects to in this view, with correlation and p-value. Search below to add another catalog pathway.</p>
-          <div class="interest-genes">
-            <label for="interestGenesList">Genes of interest</label>
-            <p class="hint">Paste symbols or Entrez IDs to see which of them sit in each pathway on this graph. This list is independent of From genes lookup.</p>
-            <textarea id="interestGenesList" rows="3" placeholder="One per line, or comma-separated"></textarea>
-            <div class="interest-genes-actions">
-              <button type="button" id="interestGenesApply">Apply</button>
-              <button type="button" id="interestGenesFromLookup" class="text-btn">Use From genes list</button>
-              <button type="button" id="interestGenesClear" class="text-btn">Clear</button>
-            </div>
-            <p id="interestGenesStatus" class="hint"></p>
-          </div>
+          <p class="graph-node-note">Click a pathway name to select it on the network. Uncheck a row to take that node out of the graph. Linked Pathways opens the partners it connects to in this view, with correlation, p-value, and FDR. Search below to add another catalog pathway.</p>
           <div class="graph-add combobox">
             <label class="field-label" for="graphAddInput">Add a pathway to the graph</label>
             <div class="graph-add-row">
@@ -226,17 +345,19 @@
 
       <section id="heatmap-section" hidden>
         <div class="section-head">
-          <h2>Heatmap</h2>
+          <h2>Network Heatmap</h2>
           <div class="table-tools">
             <button type="button" id="saveHeatmapPngButton">Save PNG</button>
           </div>
         </div>
-        <div id="heatmap"></div>
+        <div id="heatmapWrap" class="heatmap-wrap">
+          <canvas id="heatmap" width="1400" height="1100"></canvas>
+        </div>
       </section>
 
       <section id="table-section" hidden>
         <div class="section-head">
-          <h2>Edges</h2>
+          <h2>Network data table</h2>
           <div class="table-tools">
             <button type="button" id="copyPathwaysButton">Copy pathways</button>
             <button type="button" id="copyGenesButton">Copy genes</button>
@@ -272,8 +393,8 @@
   <form method="dialog">
     <h2>About</h2>
     <p>The question this tool answers: which pathways correlate with the one you are studying?</p>
-    <p>PCxN Explore rebuilds the old "top N neighbors" view as static files. Add one or more pathways to one or more groups, then Build network — the page fetches each selected pathway's slice, ranks their combined topN neighbors, and draws the induced graph. Nodes are colored by which group they came from; discovered neighbors are blue.</p>
-    <p>Sliders re-filter the current result without another fetch. A single-pathway query will lower the correlation cutoff if fewer than Top N significant partners exist, and show a banner on the network. Click a node to highlight its neighborhood. The URL keeps the query (including every group and pathway) so you can send someone the same neighborhood.</p>
+    <p>PCxN Explore rebuilds the old "top N neighbors" view as static files. Start from pathway names, keywords, or a gene list, then Build network — the page fetches each selected pathway's slice, ranks their combined topN neighbors, and draws the induced graph. Nodes are colored by which group they came from; discovered neighbors are blue.</p>
+    <p>Sliders re-filter the current result without another fetch, using absolute correlation (|r|) and FDR. A single-pathway query will lower the correlation cutoff if fewer than Top N FDR-significant partners exist, and show a banner on the network. Click a node to highlight its neighborhood. Use Pathway names Short or Full, Size, and Font on the graph. Search genes in network opens a panel above the graph so you can overlay genes of interest (brown ring) and see the result immediately. The URL keeps the query (including every group and pathway) so you can send someone the same neighborhood.</p>
     <button type="submit" value="close">Close</button>
   </form>
 </dialog>
@@ -339,11 +460,12 @@
   </div>
   <div class="bulk-lookup-actions">
     <button type="button" id="fromGenesDone">Done</button>
+    <button type="button" id="fromGenesBuild">Add and build</button>
   </div>
 </dialog>
 
 <dialog id="bulkLookupDialog">
-  <h2 id="bulkLookupTitle">From pathway</h2>
+  <h2 id="bulkLookupTitle">Keywords</h2>
   <label for="bulkLookupTerms">Search terms</label>
   <textarea id="bulkLookupTerms" rows="4" placeholder="One term per line, or comma-separated"></textarea>
   <fieldset class="bulk-mode">
@@ -373,6 +495,6 @@
 <script src="https://cdn.jsdelivr.net/npm/datatables.net-dt@3.0.4/js/dataTables.dataTables.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvasxpress@69.6.1/src/canvasXpress.js"></script>
 <script src="config.js"></script>
-<script src="app.js?v=22"></script>
+<script src="app.js?v=37"></script>
 </body>
 </html>

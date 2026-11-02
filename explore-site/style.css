@@ -1,17 +1,18 @@
 :root {
-  --border: #ddd6cb;
-  --text: #1f1b16;
-  --muted: #6b645b;
-  --accent: #1b4d5c;
-  --accent-hover: #143c48;
-  --accent-soft: #e7f0f2;
-  --bg: #f4f1ea;
-  --panel: #fffdf8;
-  --bg-alt: #f7f4ee;
+  --border: #e2e5ea;
+  --text: #1f2933;
+  --muted: #6b7280;
+  --accent: #0e7c86;
+  --accent-hover: #0b656d;
+  --accent-soft: #e6f4f5;
+  --bg: #f7f8fa;
+  --panel: #ffffff;
+  --bg-alt: #f3f4f6;
   --error-bg: #fef2f2;
   --error-border: #fecaca;
   --error-text: #991b1b;
-  --shadow: 0 1px 2px rgba(31, 27, 22, 0.05);
+  --shadow: none;
+  --focus: #9ed8dc;
 }
 
 * { box-sizing: border-box; }
@@ -53,8 +54,7 @@ header {
 }
 h1 {
   margin: 0;
-  font-family: Iowan Old Style, Palatino, "Palatino Linotype", Georgia, serif;
-  font-size: 1.35rem;
+  font-size: 1.2rem;
   font-weight: 650;
   letter-spacing: -0.01em;
 }
@@ -95,22 +95,148 @@ h1 {
 
 main {
   display: grid;
-  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
-  gap: 24px;
+  grid-template-columns: 1fr;
+  gap: 16px;
   align-items: start;
+}
+main.landing-only #workspace {
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+main.query-dock-bottom {
+  padding-bottom: 168px;
+}
+main.query-dock-bottom #query-form {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: min(1072px, calc(100% - 48px));
+  z-index: 40;
+  flex-direction: column-reverse;
+  max-height: min(72vh, 680px);
+  overflow: auto;
+  box-shadow: 0 -8px 24px rgba(15, 23, 32, 0.1);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+main.query-dock-bottom #query-form .seeds-panel {
+  margin-top: 0;
+  margin-bottom: 8px;
+  padding-top: 0;
+  padding-bottom: 12px;
+  border-top: 0;
+  border-bottom: 1px solid var(--border);
+}
+main.query-dock-bottom .combobox-menu,
+main.query-dock-bottom .tissue-menu {
+  top: auto;
+  bottom: calc(100% + 2px);
+}
+main.query-dock-bottom #query-status,
+main.query-dock-bottom #index-meta {
+  display: none;
 }
 
 #query-form {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 8px;
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 16px;
+  border-radius: 4px;
+  padding: 10px 12px 8px;
   background: var(--panel);
-  box-shadow: var(--shadow);
   min-width: 0;
 }
+
+.query-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 10px;
+}
+.toolbar-field { min-width: 0; }
+.toolbar-tissue { flex: 1 1 140px; max-width: 180px; }
+.toolbar-collection { flex: 1 1 190px; max-width: 240px; }
+.toolbar-num input { width: 4.5rem; }
+.toolbar-seeds { flex: 1 1 180px; max-width: 280px; min-width: 160px; }
+.toolbar-compare {
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 8px;
+}
+.toolbar-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-left: auto;
+}
+@media (max-width: 960px) {
+  .toolbar-actions {
+    flex: 1 0 100%;
+    justify-content: flex-end;
+    margin-left: 0;
+  }
+}
+.seeds-summary {
+  position: relative;
+  width: 100%;
+  text-align: left;
+  padding: 7px 22px 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #fff;
+  font-size: 0.92rem;
+  font-family: inherit;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.seeds-summary::after {
+  content: "▾";
+  position: absolute;
+  right: 8px;
+  color: var(--muted);
+}
+.seeds-summary[aria-expanded="true"]::after { content: "▴"; }
+button.seeds-summary:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--text);
+}
+.seeds-summary[aria-expanded="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.seeds-summary:focus {
+  outline: 2px solid var(--focus);
+  border-color: var(--accent);
+}
+.seeds-panel {
+  margin-top: 2px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  max-height: min(360px, 50vh);
+  overflow: auto;
+}
+.group-tab-list {
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.group-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.group-tab .group-swatch {
+  width: 8px;
+  height: 8px;
+}
+#query-form .tissue-chip-list { display: none; }
+#query-form .toolbar-actions button { margin-top: 0; }
 
 .field-row { display: flex; flex-direction: column; gap: 5px; }
 .field-row label, .field-label { font-size: 0.78rem; color: var(--muted); letter-spacing: 0.01em; }
@@ -124,7 +250,7 @@ main {
   text-align: left;
   padding: 7px 9px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 4px;
   background: #fff;
   font-size: 0.92rem;
   font-family: inherit;
@@ -137,7 +263,7 @@ button.tissue-summary:hover {
   color: var(--text);
 }
 .tissue-summary:focus {
-  outline: 2px solid #9ec4cd;
+  outline: 2px solid var(--focus);
   border-color: var(--accent);
 }
 .tissue-menu { padding: 6px 0 4px; }
@@ -165,7 +291,7 @@ button.tissue-summary:hover {
 .group-pathway-input { width: 100%; }
 .field-row input:not([type="range"]):focus, .field-row select:focus, .network-tools select:focus,
 .group-pathway-input:focus, .tissue-filter:focus {
-  outline: 2px solid #9ec4cd;
+  outline: 2px solid var(--focus);
   border-color: var(--accent);
 }
 .field-row.buttons { flex-direction: row; gap: 8px; align-items: center; }
@@ -180,7 +306,7 @@ button.tissue-summary:hover {
 .groups-field, .group-row { min-width: 0; }
 .group-row {
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 4px;
   padding: 10px;
   margin-bottom: 10px;
   background: #fff;
@@ -262,6 +388,10 @@ button.tissue-summary:hover {
   flex: none;
 }
 .chip-remove:hover { color: var(--error-text); background: var(--error-bg); }
+.chip-more {
+  margin-top: 0;
+  font-size: 0.82rem;
+}
 .tissue-chip-list { margin: 2px 0 0; }
 .tissue-chip-list .chip-label { text-transform: capitalize; }
 
@@ -334,7 +464,7 @@ button.tissue-summary:hover {
   resize: vertical;
 }
 #interestGenesList:focus {
-  outline: 2px solid #9ec4cd;
+  outline: 2px solid var(--focus);
   border-color: var(--accent);
 }
 .interest-genes-actions {
@@ -392,7 +522,7 @@ button.tissue-summary:hover {
 }
 #graphNodeTable .graph-edges,
 #graphNodeTable .graph-my-genes { white-space: nowrap; }
-#graphNodeTable .graph-my-genes.has-hits { font-weight: 650; color: #c2410c; }
+#graphNodeTable .graph-my-genes.has-hits { font-weight: 650; color: #b45309; }
 #graphNodeTable .graph-swatch {
   width: 8px;
   height: 8px;
@@ -416,7 +546,7 @@ button.tissue-summary:hover {
   background: #fff;
   border: 1px solid var(--border);
   border-radius: 6px;
-  box-shadow: 0 8px 20px rgba(31, 27, 22, 0.1);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
 }
 .combobox-menu li { padding: 0; cursor: pointer; }
 .combobox-menu li:hover,
@@ -437,7 +567,7 @@ button.tissue-summary:hover {
 button {
   padding: 7px 16px;
   border: 1px solid var(--accent);
-  border-radius: 6px;
+  border-radius: 4px;
   background: var(--accent);
   color: #fff;
   cursor: pointer;
@@ -445,16 +575,16 @@ button {
   font-family: inherit;
 }
 button:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
-button#resetButton, button#fitButton, button#saveNetworkPngButton, button#saveHeatmapPngButton,
-button#exportCsvButton, button#copyLinkButton,
+button#resetButton, button#fitButton, button#interestSearchButton, button#interestGenesClose, button#saveNetworkPngButton, button#saveHeatmapPngButton,
+button#saveNetworkCsvButton, button#exportCsvButton, button#copyLinkButton,
 button#graphAddButton, button#graphShowAll, button#copyPathwaysButton, button#copyGenesButton,
 button#copyPathwayGenesButton, button#copyPathwayLinksButton,
 dialog button {
   background: #fff;
   color: var(--accent);
 }
-button#resetButton:hover, button#fitButton:hover, button#saveNetworkPngButton:hover,
-button#saveHeatmapPngButton:hover, button#exportCsvButton:hover,
+button#resetButton:hover, button#fitButton:hover, button#interestSearchButton:hover, button#interestGenesClose:hover, button#saveNetworkPngButton:hover,
+button#saveHeatmapPngButton:hover, button#saveNetworkCsvButton:hover, button#exportCsvButton:hover,
 button#copyLinkButton:hover, button#graphAddButton:hover, button#graphShowAll:hover,
 button#copyPathwaysButton:hover, button#copyGenesButton:hover, button#copyPathwayGenesButton:hover,
 button#copyPathwayLinksButton:hover,
@@ -463,47 +593,171 @@ dialog button:hover {
 }
 button:disabled { opacity: 0.55; cursor: wait; }
 
-.status { margin: 0; font-size: 0.85rem; color: var(--muted); min-height: 1.2em; }
+.status { margin: 0; font-size: 0.85rem; color: var(--muted); }
+#query-form .status:empty { display: none; }
+body:has(#results:not([hidden])) #query-status { display: none; }
 
 #workspace {
   min-width: 0;
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 4px;
   padding: 20px 22px 24px;
-  box-shadow: var(--shadow);
 }
 
-#empty-state { padding: 8px 0 8px; color: var(--muted); text-align: center; }
-#empty-state > p { margin: 0 auto 12px; line-height: 1.55; max-width: 42em; }
-#empty-state .purpose {
-  max-width: none;
-  margin-bottom: 14px;
+#landing { padding: 24px 0 8px; color: var(--muted); text-align: center; }
+#landing > p { margin: 0 auto 12px; line-height: 1.55; max-width: 40em; }
+#landing .purpose {
+  max-width: 36em;
+  margin-bottom: 8px;
   color: var(--text);
-  font-family: Iowan Old Style, Palatino, "Palatino Linotype", Georgia, serif;
-  font-size: 1.2rem;
+  font-size: 1.45rem;
   font-weight: 600;
   line-height: 1.3;
-  letter-spacing: -0.01em;
-  white-space: nowrap;
+  letter-spacing: -0.02em;
 }
-.examples, .empty-genes, .empty-meta { font-size: 0.92rem; max-width: 46em; }
-.empty-meta { color: var(--muted); }
-.empty-meta a { color: var(--accent); text-decoration: none; }
-.empty-meta a:hover { text-decoration: underline; }
-.homepage-figure {
-  display: flex;
+.tab-list.landing-tab-list {
   justify-content: center;
-  margin: 20px auto 0;
+  max-width: 42em;
+  margin: 8px auto 32px;
 }
-.homepage-figure img {
-  display: block;
-  max-width: min(100%, 720px);
+.landing-panel {
+  text-align: left;
+  max-width: 46em;
+  margin: 0 auto 16px;
+}
+.landing-combobox { width: 100%; }
+#landingPathwayInput {
+  padding: 12px 14px;
+  font-size: 1rem;
+  border-radius: 4px;
+}
+.landing-panel textarea {
   width: 100%;
-  height: auto;
+  min-height: 88px;
+  padding: 6px 8px;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  background: #fff;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+}
+.landing-panel textarea:focus {
+  outline: 2px solid var(--focus);
+  border-color: var(--accent);
+}
+.landing-bulk-mode {
+  border: 0;
+  padding: 0;
+  margin: 10px 0 8px;
+}
+.landing-bulk-mode legend {
+  font-size: 0.8rem;
+  color: var(--muted);
+  padding: 0;
+  margin-bottom: 4px;
+}
+.landing-bulk-mode label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.landing-panel .bulk-lookup-toolbar .text-btn { margin-top: 0; }
+.landing-panel .from-genes-cutoff { justify-content: flex-start; }
+#landingKeywordCount, #landingGenesCount {
+  font-size: 0.8rem;
+  color: var(--muted);
+  flex: 1;
+  min-height: 1.2em;
+}
+#landingGenesTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+#landingGenesTable th, #landingGenesTable td {
+  padding: 5px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+#landingGenesTable th { color: var(--muted); font-weight: 600; position: sticky; top: 0; background: #fff; }
+#landingGenesTable th[data-sort] { cursor: pointer; user-select: none; }
+#landingGenesTable th[data-sort][aria-sort="ascending"]::after { content: " \2191"; }
+#landingGenesTable th[data-sort][aria-sort="descending"]::after { content: " \2193"; }
+#landingGenesTable td:nth-child(3),
+#landingGenesTable td:nth-child(4),
+#landingGenesTable td:nth-child(5),
+#landingGenesTable td:nth-child(6) { text-align: right; white-space: nowrap; }
+#landingGenesTable tbody tr { cursor: pointer; }
+#landingGenesTable tbody tr:hover { background: var(--accent-soft); }
+#landingGenesTable input { pointer-events: none; }
+#landingGenesTable .from-genes-empty {
+  color: var(--muted);
+  cursor: default;
+  text-align: left;
+}
+#landingGenesTable .from-genes-empty:hover { background: none; }
+.landing-gene-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.landing-seed-bar {
+  text-align: left;
+  max-width: 46em;
+  margin: 0 auto 16px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-alt);
+}
+.landing-seed-label {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.examples, .empty-genes { font-size: 0.92rem; max-width: 46em; }
+.examples-hint {
+  display: block;
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.landing-panel .examples { margin: 0 0 28px; }
+.landing-panel .from-genes-examples { margin: 0 0 8px; }
+.landing-panel .from-genes-examples-note { margin: 2px 0 24px; }
+.catalog-stat {
+  display: flex;
+  justify-content: stretch;
+  max-width: 36em;
+  margin: 48px auto 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--panel);
+  overflow: hidden;
+}
+.catalog-stat-cell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 14px;
+  border-right: 1px solid var(--border);
+  min-width: 0;
+}
+.catalog-stat-cell:last-child { border-right: 0; }
+.catalog-stat-cell strong {
+  font-size: 1.15rem;
+  font-weight: 650;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+.catalog-stat-cell span {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-align: center;
 }
 .example-chip {
   display: inline;
@@ -589,7 +843,7 @@ button.example-chip:hover {
 #live-filters input[type="range"]::-webkit-slider-runnable-track {
   height: 6px;
   border-radius: 999px;
-  background: #d7d0c6;
+  background: #d1d5db;
 }
 #live-filters input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -607,7 +861,7 @@ button.example-chip:hover {
 #live-filters input[type="range"]::-moz-range-track {
   height: 6px;
   border-radius: 999px;
-  background: #d7d0c6;
+  background: #d1d5db;
   border: 0;
 }
 #live-filters input[type="range"]::-moz-range-thumb {
@@ -624,7 +878,7 @@ button.example-chip:hover {
   outline: none;
 }
 #live-filters input[type="range"]:focus-visible {
-  outline: 2px solid #9ec4cd;
+  outline: 2px solid var(--focus);
   outline-offset: 3px;
 }
 
@@ -633,17 +887,55 @@ button.example-chip:hover {
   justify-content: space-between;
   gap: 12px;
   align-items: center;
+  flex-wrap: wrap;
   margin-bottom: 8px;
 }
 section h2 { font-size: 1.05rem; margin: 0 0 8px; }
 .section-head h2 { margin: 0; }
-.network-tools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); }
+.network-section-head {
+  flex-direction: column;
+  align-items: stretch;
+}
+.network-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.network-tools-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
 .network-style {
   display: inline-flex;
   align-items: center;
   gap: 4px;
 }
-.network-style .field-label { margin-right: 2px; }
+.network-style .field-label { margin-right: 2px; white-space: nowrap; }
+.interest-genes-panel {
+  margin: 0 0 12px;
+}
+.interest-genes-panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.interest-genes-panel-head h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+.interest-genes-panel .interest-genes { margin: 0; }
+.interest-genes-panel button { margin-top: 0; }
+#interestSearchButton[aria-expanded="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--text);
+}
 .style-toggle {
   margin-top: 0;
   padding: 4px 9px;
@@ -675,7 +967,7 @@ section h2 { font-size: 1.05rem; margin: 0 0 8px; }
   background: var(--accent-soft);
   border: 1px solid #9dbdce;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(31, 27, 22, 0.08);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
   color: var(--text);
   font-size: 0.82rem;
   line-height: 1.35;
@@ -713,12 +1005,13 @@ section h2 { font-size: 1.05rem; margin: 0 0 8px; }
   line-height: 1;
   cursor: pointer;
 }
-.threshold-banner button:hover { background: rgba(31, 27, 22, 0.08); }
+.threshold-banner button:hover { background: rgba(15, 23, 42, 0.08); }
 #cy {
   width: 100%;
-  height: 520px;
+  height: min(70vh, 800px);
+  min-height: 520px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 4px;
   background: white;
 }
 .cy-nav {
@@ -733,7 +1026,7 @@ section h2 { font-size: 1.05rem; margin: 0 0 8px; }
   background: #fff;
   border: 1px solid var(--border);
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(31, 27, 22, 0.08);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
 }
 .cy-nav button {
   width: 32px;
@@ -759,11 +1052,11 @@ section h2 { font-size: 1.05rem; margin: 0 0 8px; }
   line-height: 1.35;
   border-radius: 6px;
   pointer-events: none;
-  box-shadow: 0 6px 16px rgba(31, 27, 22, 0.18);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
   word-break: break-word;
 }
 .cy-tooltip strong { display: block; font-weight: 600; margin-bottom: 2px; }
-.cy-tooltip-interest { display: block; margin-top: 4px; color: #fdba74; }
+.cy-tooltip-interest { display: block; margin-top: 4px; color: #92400e; }
 
 .node-info {
   min-height: 1.4em;
@@ -774,11 +1067,18 @@ section h2 { font-size: 1.05rem; margin: 0 0 8px; }
 
 .legend { font-size: 0.8rem; color: var(--muted); margin: 8px 0 0; }
 
+.heatmap-wrap,
 #heatmap {
   width: 100%;
-  height: 520px;
+  min-height: 560px;
+}
+.heatmap-wrap {
   border: 1px solid var(--border);
   border-radius: 8px;
+}
+#heatmap {
+  display: block;
+  height: 640px;
 }
 
 #network-section, #heatmap-section, #table-section { margin-bottom: 24px; }
@@ -845,7 +1145,7 @@ section h2 { font-size: 1.05rem; margin: 0 0 8px; }
   font-weight: 600;
 }
 .genes-dialog-list tr:last-child td { border-bottom: 0; }
-.genes-dialog-list tr.is-interest td { background: #fff4e8; font-weight: 650; }
+.genes-dialog-list tr.is-interest td { background: #f5ebe0; font-weight: 650; }
 .genes-dialog-empty { color: var(--muted); padding: 12px; }
 
 .node-info .text-btn { margin-left: 8px; }
@@ -860,13 +1160,13 @@ footer {
 
 dialog {
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 4px;
   padding: 20px 22px;
   width: min(480px, calc(100vw - 32px));
   color: var(--text);
   background: var(--panel);
 }
-dialog::backdrop { background: rgba(31, 27, 22, 0.4); }
+dialog::backdrop { background: rgba(15, 23, 42, 0.35); }
 dialog h2 { margin: 0 0 8px; font-size: 1.1rem; }
 dialog p { color: var(--muted); font-size: 0.92rem; }
 dialog button { margin-top: 8px; }
@@ -897,6 +1197,7 @@ dialog button { margin-top: 8px; }
   font-size: 0.85rem;
   color: var(--muted);
 }
+.from-genes-examples .examples-hint { margin-bottom: 6px; }
 .from-genes-examples .text-btn { margin-top: 0; }
 .from-genes-examples-note {
   margin: 2px 0 8px;
@@ -915,7 +1216,7 @@ dialog button { margin-top: 8px; }
   resize: vertical;
 }
 #fromGenesList:focus {
-  outline: 2px solid #9ec4cd;
+  outline: 2px solid var(--focus);
   border-color: var(--accent);
 }
 .from-genes-cutoff {
@@ -990,7 +1291,7 @@ dialog button { margin-top: 8px; }
   resize: vertical;
 }
 #bulkLookupTerms:focus {
-  outline: 2px solid #9ec4cd;
+  outline: 2px solid var(--focus);
   border-color: var(--accent);
 }
 #bulkLookupDialog .bulk-mode {
@@ -1052,13 +1353,11 @@ dialog button { margin-top: 8px; }
   margin: 0 auto;
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 4px;
   padding: 22px 26px 32px;
-  box-shadow: var(--shadow);
 }
 .docs h1 {
   margin: 0 0 14px;
-  font-family: Iowan Old Style, Palatino, "Palatino Linotype", Georgia, serif;
   font-size: 1.45rem;
   font-weight: 650;
 }
@@ -1101,6 +1400,13 @@ dialog button { margin-top: 8px; }
   .header-row, .page { padding-left: 16px; padding-right: 16px; }
   main { grid-template-columns: 1fr; }
   #workspace { padding: 16px; }
-  #empty-state .purpose { white-space: normal; }
-  #cy, #heatmap { height: 400px; }
+  #landing { padding-top: 12px; }
+  .toolbar-tissue, .toolbar-seeds, .toolbar-collection { max-width: none; flex: 1 1 100%; }
+  .toolbar-compare { padding-bottom: 0; }
+  .toolbar-actions { margin-left: 0; flex: 1 0 100%; justify-content: flex-end; }
+  main.query-dock-bottom #query-form { width: calc(100% - 32px); }
+  main.query-dock-bottom { padding-bottom: 220px; }
+  #cy { height: 400px; min-height: 400px; }
+  .heatmap-wrap, #heatmap { min-height: 480px; }
+  .catalog-stat { max-width: 100%; }
 }
