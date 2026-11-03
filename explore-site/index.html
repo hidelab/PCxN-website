@@ -8,7 +8,7 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-dt@3.0.4/css/dataTables.dataTables.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/canvasxpress@69.6.1/src/canvasXpress.css">
-<link rel="stylesheet" href="style.css?v=31">
+<link rel="stylesheet" href="style.css?v=32">
 </head>
 <body>
 
@@ -103,9 +103,9 @@
       <p>Start with a pathway name, a keyword, or a gene list. Then set tissue, database/collection, and cutoffs in the bar below and build the network.</p>
 
       <div class="tab-list landing-tab-list" role="tablist" aria-label="Search by">
-        <button type="button" class="tab landing-tab" role="tab" id="start-pathways" data-start="pathways" aria-selected="true" aria-controls="landingPanelPathways">Pathways</button>
-        <button type="button" class="tab landing-tab" role="tab" id="start-keywords" data-start="keywords" aria-selected="false" aria-controls="landingPanelKeywords">Keywords</button>
-        <button type="button" class="tab landing-tab" role="tab" id="start-genes" data-start="genes" aria-selected="false" aria-controls="landingPanelGenes">Genes</button>
+        <button type="button" class="tab landing-tab" role="tab" id="start-pathways" data-start="pathways" aria-selected="true" aria-controls="landingPanelPathways">Search/Select Pathways by List/Browsing</button>
+        <button type="button" class="tab landing-tab" role="tab" id="start-keywords" data-start="keywords" aria-selected="false" aria-controls="landingPanelKeywords">Search/Select Pathways by Keyword</button>
+        <button type="button" class="tab landing-tab" role="tab" id="start-genes" data-start="genes" aria-selected="false" aria-controls="landingPanelGenes">Search/Select Pathways by Gene List</button>
       </div>
 
       <div id="landingPanelPathways" class="landing-panel" role="tabpanel" aria-labelledby="start-pathways">
@@ -393,7 +393,7 @@
   <form method="dialog">
     <h2>About</h2>
     <p>The question this tool answers: which pathways correlate with the one you are studying?</p>
-    <p>PCxN Explore rebuilds the old "top N neighbors" view as static files. Start from pathway names, keywords, or a gene list, then Build network — the page fetches each selected pathway's slice, ranks their combined topN neighbors, and draws the induced graph. Nodes are colored by which group they came from; discovered neighbors are blue.</p>
+    <p>PCxN Explore rebuilds the old "top N neighbors" view as static files. Start from Search/Select Pathways by List/Browsing, Search/Select Pathways by Keyword, or Search/Select Pathways by Gene List, then Build network — the page fetches each selected pathway's slice, ranks their combined topN neighbors, and draws the induced graph. Nodes are colored by which group they came from; discovered neighbors are blue.</p>
     <p>Sliders re-filter the current result without another fetch, using absolute correlation (|r|) and FDR. A single-pathway query will lower the correlation cutoff if fewer than Top N FDR-significant partners exist, and show a banner on the network. Click a node to highlight its neighborhood. Use Pathway names Short or Full, Size, and Font on the graph. Search genes in network opens a panel above the graph so you can overlay genes of interest (brown ring) and see the result immediately. The URL keeps the query (including every group and pathway) so you can send someone the same neighborhood.</p>
     <button type="submit" value="close">Close</button>
   </form>
@@ -495,6 +495,6 @@
 <script src="https://cdn.jsdelivr.net/npm/datatables.net-dt@3.0.4/js/dataTables.dataTables.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvasxpress@69.6.1/src/canvasXpress.js"></script>
 <script src="config.js"></script>
-<script src="app.js?v=37"></script>
+<script src="app.js?v=38"></script>
 </body>
 </html>

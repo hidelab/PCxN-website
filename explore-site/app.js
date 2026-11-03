@@ -1979,7 +1979,7 @@ function useFromGenesListForInterest() {
   const text = dialogText || landingText;
   if (!text) {
     if (interestGenesStatus) {
-      interestGenesStatus.textContent = "Paste a gene list on the Genes tab or in Genes lookup first, or paste genes here.";
+      interestGenesStatus.textContent = "Paste a gene list on Search/Select Pathways by Gene List or in Genes lookup first, or paste genes here.";
     }
     return;
   }
