@@ -64,6 +64,18 @@ const landingGenesSelectAll = el("landingGenesSelectAll");
 const landingGenesClearVisible = el("landingGenesClearVisible");
 const landingGenesAdd = el("landingGenesAdd");
 const landingGenesBuild = el("landingGenesBuild");
+const landingPanelScores = el("landingPanelScores");
+const landingScoresList = el("landingScoresList");
+const landingScoresQCutoff = el("landingScoresQCutoff");
+const landingScoresFind = el("landingScoresFind");
+const landingScoresStatus = el("landingScoresStatus");
+const landingScoresCount = el("landingScoresCount");
+const landingScoresTable = el("landingScoresTable");
+const landingScoresTableBody = landingScoresTable ? landingScoresTable.querySelector("tbody") : null;
+const landingScoresSelectAll = el("landingScoresSelectAll");
+const landingScoresClearVisible = el("landingScoresClearVisible");
+const landingScoresAdd = el("landingScoresAdd");
+const landingScoresBuild = el("landingScoresBuild");
 const landingSeedBar = el("landingSeedBar");
 const landingSeedChips = el("landingSeedChips");
 const fromGenesBuild = el("fromGenesBuild");
@@ -143,6 +155,7 @@ const interestGenesFromLookup = el("interestGenesFromLookup");
 const interestGenesClear = el("interestGenesClear");
 const interestGenesStatus = el("interestGenesStatus");
 const interestLegendNote = el("interestLegendNote");
+const scoreLegendNote = el("scoreLegendNote");
 const githubLink = el("githubLink");
 const docsLink = el("docsLink");
 const citeButton = el("citeButton");
@@ -250,6 +263,14 @@ let lastLandingGeneHits = [];
 let landingGeneChecked = new Set();
 let landingGeneSortKey = "q";
 let landingGeneSortDir = "asc";
+let landingScoreItems = [];
+let lastLandingScoreHits = [];
+let landingScoreChecked = new Set();
+let landingScoreSortKey = "q";
+let landingScoreSortDir = "asc";
+let pathwayScoreByName = new Map();
+let scoreOverlayActive = false;
+let scoreOverlayMeta = null;
 let geneMembership = null;
 let geneMembershipError = null;
 let interestApplied = false;
@@ -258,6 +279,15 @@ let interestRecognized = [];
 let interestUnrecognized = [];
 let interestTokenCount = 0;
 const INTEREST_RING = "#b45309";
+const SCORE_AUC_LO = 0.25;
+const SCORE_AUC_HI = 0.75;
+const SCORE_AUC_DEAD_LO = 0.45;
+const SCORE_AUC_DEAD_HI = 0.55;
+const SCORE_Z_DEAD = 1.5;
+const SCORE_UNSCORED_COLOR = "#c5cdd6";
+const SCORE_DOWN_COLOR = "#2166ac";
+const SCORE_MID_COLOR = "#f7f7f7";
+const SCORE_UP_COLOR = "#b2182b";
 
 function makeGroup() {
   groupIdCounter += 1;
@@ -678,7 +708,7 @@ function primaryGroup() {
 }
 
 function setStartMode(mode, writeUrl) {
-  const next = mode === "keywords" || mode === "genes" ? mode : "pathways";
+  const next = mode === "keywords" || mode === "genes" || mode === "scores" ? mode : "pathways";
   startMode = next;
   document.querySelectorAll(".landing-tab").forEach((btn) => {
     const on = btn.dataset.start === next;
@@ -687,6 +717,7 @@ function setStartMode(mode, writeUrl) {
   if (landingPanelPathways) landingPanelPathways.hidden = next !== "pathways";
   if (landingPanelKeywords) landingPanelKeywords.hidden = next !== "keywords";
   if (landingPanelGenes) landingPanelGenes.hidden = next !== "genes";
+  if (landingPanelScores) landingPanelScores.hidden = next !== "scores";
   if (next === "pathways") closeLandingPathwayMenu();
   if (next === "keywords") renderLandingKeywords();
   updateLandingCollectionHint();
@@ -715,6 +746,7 @@ function updateLandingState() {
   renderLandingSeedChips();
   if (!showing && startMode === "keywords") renderLandingKeywords();
   if (!showing && startMode === "genes") syncLandingGeneCheckboxes();
+  if (!showing && startMode === "scores") syncLandingScoreCheckboxes();
 }
 
 function renderLandingSeedChips() {
@@ -971,7 +1003,7 @@ function writeUrlState() {
 function applyUrlFields() {
   const params = new URLSearchParams(window.location.search);
   const start = params.get("start");
-  if (start === "keywords" || start === "genes" || start === "pathways") {
+  if (start === "keywords" || start === "genes" || start === "scores" || start === "pathways") {
     setStartMode(start, false);
   }
   if (params.get("collection") && collectionSelect.querySelector(`option[value="${CSS.escape(params.get("collection"))}"]`)) {
@@ -1232,21 +1264,19 @@ function updateEmptyCatalog() {
     catalog.hidden = true;
     return;
   }
-  const bits = [
-    [nPathways.toLocaleString(), nPathways === 1 ? "pathway" : "pathways"],
-    [nTissues.toLocaleString(), "tissue-cell types"],
-    [nCollections.toLocaleString(), nCollections === 1 ? "database/collection" : "databases/collections"],
-  ];
-  for (const [value, label] of bits) {
-    const cell = document.createElement("span");
-    cell.className = "catalog-stat-cell";
-    const num = document.createElement("strong");
-    num.textContent = value;
-    const lab = document.createElement("span");
-    lab.textContent = label;
-    cell.append(num, lab);
-    catalog.appendChild(cell);
-  }
+  const table = document.createElement("table");
+  table.className = "catalog-table";
+  table.innerHTML = `<thead><tr>
+      <th scope="col">Pathways</th>
+      <th scope="col">Tissue-Cell Types</th>
+      <th scope="col">Databases/Collections</th>
+    </tr></thead>
+    <tbody><tr>
+      <td>${nPathways.toLocaleString()}</td>
+      <td>${nTissues.toLocaleString()}</td>
+      <td>${nCollections.toLocaleString()}</td>
+    </tr></tbody>`;
+  catalog.appendChild(table);
   catalog.hidden = false;
 }
 
@@ -1735,6 +1765,280 @@ function bhAdjust(pvals) {
   }
   return q;
 }
+function erf(x) {
+  const sign = x < 0 ? -1 : 1;
+  const ax = Math.abs(x);
+  const t = 1 / (1 + 0.3275911 * ax);
+  const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-ax * ax);
+  return sign * y;
+}
+
+function standardNormalCdf(z) {
+  return 0.5 * (1 + erf(z / Math.SQRT2));
+}
+
+function twoSidedNormalP(z) {
+  if (!Number.isFinite(z)) return 1;
+  const p = 2 * (1 - standardNormalCdf(Math.abs(z)));
+  if (p < 0) return 0;
+  if (p > 1) return 1;
+  return p;
+}
+
+function parseGeneScores(text) {
+  const sums = new Map();
+  const counts = new Map();
+  const symbols = new Map();
+  let nRows = 0;
+  let nSkipped = 0;
+  for (const rawLine of String(text || "").split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#")) continue;
+    let parts;
+    if (line.includes("\t")) parts = line.split("\t");
+    else if (line.includes(",")) parts = line.split(",");
+    else parts = line.split(/\s+/);
+    parts = parts.map((p) => p.trim()).filter((p) => p !== "");
+    if (parts.length < 2) {
+      nSkipped += 1;
+      continue;
+    }
+    const gene = parts[0].replace(/^["']|["']$/g, "");
+    let score = Number(parts[1]);
+    if (!Number.isFinite(score) && parts.length > 2) {
+      for (let i = parts.length - 1; i >= 1; i -= 1) {
+        const n = Number(parts[i]);
+        if (Number.isFinite(n)) {
+          score = n;
+          break;
+        }
+      }
+    }
+    if (!gene || !Number.isFinite(score)) {
+      nSkipped += 1;
+      continue;
+    }
+    const key = gene.toUpperCase();
+    nRows += 1;
+    sums.set(key, (sums.get(key) || 0) + score);
+    counts.set(key, (counts.get(key) || 0) + 1);
+    if (!symbols.has(key)) symbols.set(key, gene);
+  }
+  const scores = new Map();
+  let nDupes = 0;
+  for (const [key, sum] of sums) {
+    const n = counts.get(key) || 1;
+    if (n > 1) nDupes += 1;
+    scores.set(key, { symbol: symbols.get(key) || key, score: sum / n, key });
+  }
+  return { scores, nRows, nDupes, nSkipped };
+}
+
+function averageRanks(items) {
+  const sorted = [...items].sort((a, b) => a.value - b.value);
+  const rankByKey = new Map();
+  const tieSizes = [];
+  let i = 0;
+  while (i < sorted.length) {
+    let j = i + 1;
+    while (j < sorted.length && sorted[j].value === sorted[i].value) j += 1;
+    const avgRank = (i + 1 + j) / 2;
+    const t = j - i;
+    if (t > 1) tieSizes.push(t);
+    for (let k = i; k < j; k += 1) rankByKey.set(sorted[k].key, avgRank);
+    i = j;
+  }
+  return { rankByKey, tieSizes, n: sorted.length };
+}
+
+function collectionMembershipUniverse() {
+  const membershipPathways = (geneMembership && geneMembership.pathways) || {};
+  const entrezToSymbol = (geneMembership && geneMembership.entrez_to_symbol) || {};
+  const tested = [];
+  const universe = new Set();
+  const entrezUniverse = new Set();
+  let skippedNoMembership = 0;
+  for (const p of pathwayIndexData.pathways || []) {
+    if (!pathwayMatchesCollection(p)) continue;
+    const rec = membershipPathways[p.pathway_name];
+    if (!rec) {
+      skippedNoMembership += 1;
+      continue;
+    }
+    const geneSet = new Set();
+    for (const g of rec.genes || []) {
+      const symbol = geneRecordSymbol(g);
+      const entrez = geneRecordEntrez(g);
+      if (symbol) {
+        const key = symbol.toUpperCase();
+        geneSet.add(key);
+        universe.add(key);
+      } else if (entrez) {
+        geneSet.add(String(entrez));
+      }
+      if (entrez) {
+        entrezUniverse.add(String(entrez));
+        universe.add(String(entrez));
+      }
+    }
+    tested.push({ p, rec, geneSet });
+  }
+  return { tested, universe, entrezUniverse, entrezToSymbol, skippedNoMembership };
+}
+
+function resolveScoreKey(token, universe, entrezToSymbol, entrezUniverse) {
+  const upper = String(token || "").toUpperCase();
+  if (/^\d+$/.test(token)) {
+    const symbol = entrezToSymbol[token];
+    if (symbol && universe.has(String(symbol).toUpperCase())) return String(symbol).toUpperCase();
+    if (entrezUniverse.has(token) || universe.has(token)) return symbol ? String(symbol).toUpperCase() : token;
+    return "";
+  }
+  if (universe.has(upper)) return upper;
+  return "";
+}
+
+function scoreFromGeneRanks(scoreMap) {
+  const { tested, universe, entrezUniverse, entrezToSymbol, skippedNoMembership } = collectionMembershipUniverse();
+  const recognized = [];
+  const unrecognized = [];
+  const seen = new Set();
+  const rankedItems = [];
+  for (const rec of scoreMap.values()) {
+    const key = resolveScoreKey(rec.symbol, universe, entrezToSymbol, entrezUniverse)
+      || resolveScoreKey(rec.key, universe, entrezToSymbol, entrezUniverse);
+    if (!key) {
+      unrecognized.push(rec.symbol);
+      continue;
+    }
+    if (seen.has(key)) continue;
+    seen.add(key);
+    recognized.push(rec.symbol);
+    rankedItems.push({ key, value: rec.score, symbol: rec.symbol });
+  }
+  const ranked = averageRanks(rankedItems);
+  const N = ranked.n;
+  const tieCorr = N < 2 ? 0 : ranked.tieSizes.reduce((s, t) => s + (t * t * t - t), 0) / (N * (N - 1));
+  const rows = [];
+  for (const t of tested) {
+    let n1 = 0;
+    let r1 = 0;
+    for (const g of t.geneSet) {
+      const rank = ranked.rankByKey.get(g);
+      if (rank == null) continue;
+      n1 += 1;
+      r1 += rank;
+    }
+    const n2 = N - n1;
+    if (n1 < 2 || n2 < 2) continue;
+    const U = r1 - (n1 * (n1 + 1)) / 2;
+    const auc = U / (n1 * n2);
+    const mu = (n1 * n2) / 2;
+    const sigma2 = ((n1 * n2) / 12) * (N + 1 - tieCorr);
+    const z = sigma2 > 0 ? (U - mu) / Math.sqrt(sigma2) : 0;
+    rows.push({
+      name: t.p.pathway_name,
+      size: t.rec.size || t.geneSet.size,
+      n1,
+      n2,
+      overlap: n1,
+      auc,
+      z,
+      pval: twoSidedNormalP(z),
+    });
+  }
+  const qvals = bhAdjust(rows.map((r) => r.pval));
+  rows.forEach((r, i) => {
+    r.q = qvals[i];
+  });
+  rows.sort((a, b) => a.q - b.q || Math.abs(b.z) - Math.abs(a.z));
+  return {
+    rows,
+    recognized,
+    unrecognized,
+    universeSize: N,
+    skippedNoMembership,
+    tested: tested.length,
+    uploaded: scoreMap.size,
+  };
+}
+
+function clearScoreOverlay() {
+  pathwayScoreByName = new Map();
+  scoreOverlayActive = false;
+  scoreOverlayMeta = null;
+  if (scoreLegendNote) scoreLegendNote.hidden = true;
+}
+
+function applyScoreOverlayRows(rows, meta) {
+  pathwayScoreByName = new Map();
+  for (const row of rows) pathwayScoreByName.set(row.name, row);
+  scoreOverlayActive = rows.length > 0;
+  scoreOverlayMeta = meta || null;
+  if (scoreLegendNote) scoreLegendNote.hidden = !scoreOverlayActive;
+}
+
+function pathwayScoreRecord(name) {
+  if (!scoreOverlayActive) return null;
+  return pathwayScoreByName.get(name) || null;
+}
+
+function scoreIsCalled(rec) {
+  if (!rec || !Number.isFinite(rec.z) || !Number.isFinite(rec.auc)) return false;
+  if (Math.abs(rec.z) < SCORE_Z_DEAD) return false;
+  if (rec.auc > SCORE_AUC_DEAD_LO && rec.auc < SCORE_AUC_DEAD_HI) return false;
+  return true;
+}
+
+function formatAuc(value) {
+  if (!Number.isFinite(value)) return "";
+  return value.toFixed(2);
+}
+
+function formatZ(value) {
+  if (!Number.isFinite(value)) return "";
+  const n = value.toFixed(2);
+  return value > 0 ? `+${n}` : n;
+}
+
+function mixHex(a, b, t) {
+  const pa = parseInt(a.slice(1), 16);
+  const pb = parseInt(b.slice(1), 16);
+  const ar = (pa >> 16) & 255;
+  const ag = (pa >> 8) & 255;
+  const ab = pa & 255;
+  const br = (pb >> 16) & 255;
+  const bg = (pb >> 8) & 255;
+  const bb = pb & 255;
+  const u = Math.min(1, Math.max(0, t));
+  const r = Math.round(ar + (br - ar) * u);
+  const g = Math.round(ag + (bg - ag) * u);
+  const bl = Math.round(ab + (bb - ab) * u);
+  return `#${[r, g, bl].map((n) => n.toString(16).padStart(2, "0")).join("")}`;
+}
+
+function aucToColor(auc) {
+  const capped = Math.min(SCORE_AUC_HI, Math.max(SCORE_AUC_LO, auc));
+  const mid = 0.5;
+  if (capped <= mid) {
+    const t = (capped - SCORE_AUC_LO) / (mid - SCORE_AUC_LO);
+    return mixHex(SCORE_DOWN_COLOR, SCORE_MID_COLOR, t);
+  }
+  const t = (capped - mid) / (SCORE_AUC_HI - mid);
+  return mixHex(SCORE_MID_COLOR, SCORE_UP_COLOR, t);
+}
+
+function edgeConcordanceStyle(correlation, sourceName, targetName) {
+  if (!scoreOverlayActive) return "solid";
+  const a = pathwayScoreRecord(sourceName);
+  const b = pathwayScoreRecord(targetName);
+  if (!scoreIsCalled(a) || !scoreIsCalled(b)) return "solid";
+  const prod = Math.sign(a.z) * Math.sign(b.z);
+  const rs = Math.sign(correlation);
+  if (prod === 0 || rs === 0) return "solid";
+  return prod === rs ? "solid" : "dashed";
+}
+
 function parseGeneTokens(text) {
   const tokens = [];
   const seen = new Set();
@@ -2572,6 +2876,207 @@ async function buildFromLandingGenes() {
   await onGo();
 }
 
+function landingScoreEmptyRow(message) {
+  if (!landingScoresTableBody) return;
+  const tr = document.createElement("tr");
+  tr.className = "from-genes-empty";
+  tr.innerHTML = `<td class="from-genes-empty" colspan="6">${escapeHtml(message)}</td>`;
+  landingScoresTableBody.appendChild(tr);
+}
+
+function sortLandingScoreHits(hits) {
+  const mul = landingScoreSortDir === "asc" ? 1 : -1;
+  return [...hits].sort((a, b) => {
+    if (landingScoreSortKey === "name") {
+      return a.name.localeCompare(b.name) * mul;
+    }
+    const av = Number(a[landingScoreSortKey]);
+    const bv = Number(b[landingScoreSortKey]);
+    const aMissing = !Number.isFinite(av);
+    const bMissing = !Number.isFinite(bv);
+    if (aMissing && bMissing) return 0;
+    if (aMissing) return 1;
+    if (bMissing) return -1;
+    if (av === bv) return 0;
+    return (av < bv ? -1 : 1) * mul;
+  });
+}
+
+function updateLandingScoreSortHeaders() {
+  if (!landingScoresTable) return;
+  landingScoresTable.querySelectorAll("th[data-sort]").forEach((th) => {
+    if (th.dataset.sort === landingScoreSortKey) {
+      th.setAttribute("aria-sort", landingScoreSortDir === "asc" ? "ascending" : "descending");
+    } else {
+      th.setAttribute("aria-sort", "none");
+    }
+  });
+}
+
+function onLandingScoreSortClick(evt) {
+  const th = evt.target.closest("th[data-sort]");
+  if (!th) return;
+  const key = th.dataset.sort;
+  if (landingScoreSortKey === key) {
+    landingScoreSortDir = landingScoreSortDir === "asc" ? "desc" : "asc";
+  } else {
+    landingScoreSortKey = key;
+    landingScoreSortDir = "asc";
+  }
+  updateLandingScoreSortHeaders();
+  if (lastLandingScoreHits.length) renderLandingScoreRows(lastLandingScoreHits);
+}
+
+function renderLandingScoreRows(hits, fallbackNote) {
+  if (!landingScoresTableBody) return;
+  landingScoresTableBody.innerHTML = "";
+  landingScoreItems = [];
+  updateLandingScoreSortHeaders();
+  if (hits.length === 0) {
+    landingScoreEmptyRow(fallbackNote || "No pathways to show.");
+    return;
+  }
+  const ordered = sortLandingScoreHits(hits);
+  const frag = document.createDocumentFragment();
+  for (const hit of ordered) {
+    const tr = document.createElement("tr");
+    tr.dataset.name = hit.name;
+    const checked = landingScoreChecked.has(hit.name);
+    tr.innerHTML = `<td><input type="checkbox" tabindex="-1"${checked ? " checked" : ""}></td>
+      <td>${escapeHtml(hit.name)}</td>
+      <td>${hit.n1}</td>
+      <td>${formatAuc(hit.auc)}</td>
+      <td>${formatZ(hit.z)}</td>
+      <td>${formatQValue(hit.q)}</td>`;
+    tr.addEventListener("mousedown", (evt) => {
+      evt.preventDefault();
+      if (landingScoreChecked.has(hit.name)) landingScoreChecked.delete(hit.name);
+      else landingScoreChecked.add(hit.name);
+      const box = tr.querySelector("input[type=checkbox]");
+      if (box) box.checked = landingScoreChecked.has(hit.name);
+    });
+    frag.appendChild(tr);
+    landingScoreItems.push(tr);
+  }
+  landingScoresTableBody.appendChild(frag);
+}
+
+function syncLandingScoreCheckboxes() {
+  for (const row of landingScoreItems) {
+    const box = row.querySelector("input[type=checkbox]");
+    if (box) box.checked = landingScoreChecked.has(row.dataset.name);
+  }
+}
+
+async function renderLandingScores() {
+  if (!landingScoresTableBody) return;
+  landingScoresTableBody.innerHTML = "";
+  landingScoreItems = [];
+  lastLandingScoreHits = [];
+  if (landingScoresCount) landingScoresCount.textContent = "";
+  if (landingScoresStatus) landingScoresStatus.textContent = "";
+  const parsed = parseGeneScores(landingScoresList ? landingScoresList.value : "");
+  if (parsed.scores.size === 0) {
+    clearScoreOverlay();
+    landingScoreEmptyRow("Paste a gene and a numeric score on each line, then Test pathways.");
+    return;
+  }
+  try {
+    await ensureGeneMembership();
+  } catch (err) {
+    if (landingScoresStatus) landingScoresStatus.textContent = `Could not load gene membership. ${err.message}`;
+    landingScoreEmptyRow("Gene membership file is missing.");
+    return;
+  }
+  const qCut = Number(landingScoresQCutoff ? landingScoresQCutoff.value : 0.05);
+  const cutoff = Number.isFinite(qCut) ? qCut : 0.05;
+  const result = scoreFromGeneRanks(parsed.scores);
+  applyScoreOverlayRows(result.rows, {
+    recognized: result.recognized.length,
+    unrecognized: result.unrecognized.length,
+    uploaded: result.uploaded,
+    universeSize: result.universeSize,
+  });
+  const collectionLabel = collectionSelect.value || "all collections";
+  const skipBit = result.skippedNoMembership
+    ? ` ${result.skippedNoMembership} pathway(s) skipped (no gene membership).`
+    : "";
+  const dupeBit = parsed.nDupes ? ` Averaged ${parsed.nDupes} repeated gene(s).` : "";
+  if (landingScoresStatus) {
+    landingScoresStatus.textContent = `${result.recognized.length} of ${result.uploaded} gene(s) recognized and re-ranked 1…${result.universeSize}; ${result.unrecognized.length} unmatched dropped. Tested ${result.rows.length} pathway(s) in ${collectionLabel}.${skipBit}${dupeBit}`;
+    if (result.unrecognized.length && result.unrecognized.length <= 12) {
+      landingScoresStatus.textContent += ` Unmatched: ${result.unrecognized.join(", ")}.`;
+    } else if (result.unrecognized.length > 12) {
+      landingScoresStatus.textContent += ` Unmatched include: ${result.unrecognized.slice(0, 8).join(", ")}…`;
+    }
+  }
+  if (result.tested === 0) {
+    landingScoreEmptyRow("No pathways in this collection have gene membership.");
+    return;
+  }
+  if (result.recognized.length === 0) {
+    clearScoreOverlay();
+    landingScoreEmptyRow("None of those genes are in the current collection universe.");
+    return;
+  }
+  const group = primaryGroup();
+  const other = namesInOtherGroups(group);
+  const ranked = result.rows.filter((r) => !other.has(r.name));
+  const significant = ranked.filter((r) => r.q < cutoff);
+  let hits = significant;
+  let usedFallback = false;
+  if (hits.length === 0) {
+    hits = ranked.slice(0, 10);
+    usedFallback = true;
+    if (landingScoresCount) landingScoresCount.textContent = `No pathways with q < ${cutoff}. Showing top 10.`;
+  } else if (landingScoresCount) {
+    landingScoresCount.textContent =
+      hits.length === 1 ? "1 pathway with q below cutoff" : `${hits.length} pathways with q below cutoff`;
+  }
+  const visible = new Set(hits.map((h) => h.name));
+  for (const name of [...landingScoreChecked]) {
+    if (!visible.has(name)) landingScoreChecked.delete(name);
+  }
+  lastLandingScoreHits = hits;
+  renderLandingScoreRows(hits, usedFallback ? "No pathways to show." : "No pathways with q below cutoff.");
+}
+
+function setVisibleLandingScoreSelection(checked) {
+  for (const row of landingScoreItems) {
+    const name = row.dataset.name;
+    if (!name) continue;
+    if (checked) landingScoreChecked.add(name);
+    else landingScoreChecked.delete(name);
+  }
+  syncLandingScoreCheckboxes();
+}
+
+function addLandingScoreSelection() {
+  const group = primaryGroup();
+  const other = namesInOtherGroups(group);
+  let added = 0;
+  for (const name of landingScoreChecked) {
+    if (groupHasPathway(group, name) || other.has(name)) continue;
+    const entry = pathwayByName.get(name);
+    if (!entry) continue;
+    group.pathways.push(entry);
+    added += 1;
+  }
+  renderChips(group);
+  return added;
+}
+
+async function buildFromLandingScores() {
+  addLandingScoreSelection();
+  if (flattenQuerySet().length === 0) {
+    if (landingScoresStatus) {
+      landingScoresStatus.textContent = "Select one or more pathways, then Add and build.";
+    }
+    return;
+  }
+  await onGo();
+}
+
 async function buildFromGenesDialog() {
   if (fromGenesDialog.open) fromGenesDialog.close();
   if (flattenQuerySet().length === 0) {
@@ -2710,22 +3215,31 @@ function renderResultMeta(selectedCount, groupCount, neighborCount, edgeCount) {
 
 function networkLegendItems() {
   const items = [];
+  if (scoreOverlayActive) {
+    items.push({ color: aucToColor(SCORE_AUC_LO), label: "AUC ≤ 0.25 (down)" });
+    items.push({ color: aucToColor(0.5), label: "AUC 0.5" });
+    items.push({ color: aucToColor(SCORE_AUC_HI), label: "AUC ≥ 0.75 (up)" });
+    items.push({ color: SCORE_UNSCORED_COLOR, label: "No score" });
+  }
   if (lastQuery) {
     for (const g of lastQuery.groups) {
       if (!g.pathways.length) continue;
       const name = g.name && String(g.name).trim() ? String(g.name).trim() : "Group";
-      items.push({ color: cssColor(g.color, NEIGHBOR_COLOR), label: name });
+      items.push({
+        color: cssColor(g.color, NEIGHBOR_COLOR),
+        label: scoreOverlayActive ? `${name} (outline)` : name,
+      });
     }
   }
-  items.push({ color: NEIGHBOR_COLOR, label: "Neighbor" });
+  if (!scoreOverlayActive) items.push({ color: NEIGHBOR_COLOR, label: "Neighbor" });
   const extras = activeTissueCache() && activeTissueCache().extraNames ? activeTissueCache().extraNames : [];
-  if (extras.length) items.push({ color: ADDED_COLOR, label: "Added" });
+  if (extras.length) items.push({ color: ADDED_COLOR, label: scoreOverlayActive ? "Added (outline)" : "Added" });
   return items;
 }
 
 function networkLegendNotes() {
   const notes = [];
-  for (const node of [classicLegendNote, emLegendNote, hubmapLegendNote, interestLegendNote]) {
+  for (const node of [classicLegendNote, emLegendNote, hubmapLegendNote, interestLegendNote, scoreLegendNote]) {
     if (!node || node.hidden) continue;
     const text = String(node.textContent || "")
       .replace(/\s*Click a node(?: or a table row)? to highlight(?: its)? neighbors\.?/i, "")
@@ -2744,7 +3258,12 @@ function renderLegend() {
     (item) =>
       `<li><span class="legend-swatch" style="background:${cssColor(item.color)}"></span>${escapeHtml(item.label)}</li>`
   );
-  legendEl.innerHTML = `<ul class="legend-list">${items.join("")}</ul>`;
+  let extra = "";
+  if (scoreOverlayActive) {
+    extra = `<div class="legend-auc"><span>0.25</span><span class="legend-auc-bar" aria-hidden="true"></span><span>0.75</span></div>
+      <div class="legend-edge-key"><span><i class="legend-edge-sample" aria-hidden="true"></i> concordant with GTEx</span><span><i class="legend-edge-sample is-dashed" aria-hidden="true"></i> discordant with GTEx</span></div>`;
+  }
+  legendEl.innerHTML = `<ul class="legend-list">${items.join("")}</ul>${extra}`;
 }
 
 function renderTissueTabs(tissueIds) {
@@ -3018,10 +3537,19 @@ async function onReset() {
   if (landingGenesStatus) landingGenesStatus.textContent = "";
   if (landingGenesCount) landingGenesCount.textContent = "";
   if (landingGenesTableBody) landingGenesTableBody.innerHTML = "";
+  if (landingScoresList) landingScoresList.value = "";
+  if (landingScoresQCutoff) landingScoresQCutoff.value = "0.05";
+  if (landingScoresStatus) landingScoresStatus.textContent = "";
+  if (landingScoresCount) landingScoresCount.textContent = "";
+  if (landingScoresTableBody) landingScoresTableBody.innerHTML = "";
   landingKeywordItems = [];
   landingGeneItems = [];
   lastLandingGeneHits = [];
   landingGeneChecked = new Set();
+  landingScoreItems = [];
+  lastLandingScoreHits = [];
+  landingScoreChecked = new Set();
+  clearScoreOverlay();
   if (landingKeywordList) landingKeywordList.innerHTML = "";
   showResults(false);
   networkSection.hidden = true;
@@ -3407,6 +3935,8 @@ function renderGraphNodeTable() {
         : "0"
       : "—";
     const myGenesClass = hits.length ? "graph-my-genes has-hits" : "graph-my-genes";
+    const scoreRec = pathwayScoreRecord(row.name);
+    const aucText = scoreRec ? formatAuc(scoreRec.auc) : "—";
     tr.dataset.pathway = row.name;
     tr.innerHTML = `<td><input id="${id}" type="checkbox"${row.hidden ? "" : " checked"} aria-label="Show ${escapeHtml(
       row.name
@@ -3420,6 +3950,7 @@ function renderGraphNodeTable() {
       <td class="graph-edges">${connectionsFor(row.name).length}</td>
       <td><button type="button" class="genes-view-btn">View</button></td>
       <td class="${myGenesClass}">${myGenes}</td>
+      <td class="graph-edges">${aucText}</td>
       <td><button type="button" class="links-view-btn">View</button></td>`;
     const box = tr.querySelector("input");
     box.addEventListener("change", () => setGraphNodeHidden(row.name, !box.checked));
@@ -3490,10 +4021,33 @@ function edgeColor(correlation) {
 
 // Query-set members use their group color; everything else is a neighbor.
 function nodeColor(node) {
+  if (scoreOverlayActive && !isClusterLabelNode(node)) {
+    const rec = pathwayScoreRecord(node.data("fullName") || node.id());
+    if (rec && Number.isFinite(rec.auc)) return aucToColor(rec.auc);
+    return SCORE_UNSCORED_COLOR;
+  }
   const groupColor = node.data("groupColor");
   if (groupColor) return cssColor(groupColor, NEIGHBOR_COLOR);
   if (node.data("role") === "added") return ADDED_COLOR;
   return NEIGHBOR_COLOR;
+}
+
+function nodeOverlayBorderWidth(node) {
+  if (isClusterLabelNode(node)) return 0;
+  if (node.hasClass("interest-hit")) return 4;
+  if (scoreOverlayActive && (node.data("groupColor") || node.data("role") === "added")) return 3;
+  return 0;
+}
+
+function nodeOverlayBorderColor(node) {
+  if (isClusterLabelNode(node)) return "#ffffff";
+  if (node.hasClass("interest-hit")) return INTEREST_RING;
+  if (scoreOverlayActive) {
+    const groupColor = node.data("groupColor");
+    if (groupColor) return cssColor(groupColor, NEIGHBOR_COLOR);
+    if (node.data("role") === "added") return ADDED_COLOR;
+  }
+  return "#ffffff";
 }
 
 const NODE_LABEL_MAX = 15;
@@ -3823,6 +4377,35 @@ function nodeBodySize(node) {
   return 6 + Math.min(8, node.data("degree") || 1);
 }
 
+function networkEdgeStyle() {
+  if (scoreOverlayActive) {
+    return {
+      width: usesMapNodeStyle() ? 2.2 : 1.6,
+      "line-color": "data(color)",
+      "line-style": "data(lineStyle)",
+      "line-dash-pattern": [6, 4],
+      "line-opacity": usesMapNodeStyle() ? 0.45 : 0.85,
+      "curve-style": "bezier",
+      "control-point-step-size": 18,
+    };
+  }
+  if (usesMapNodeStyle()) {
+    return {
+      width: 2.2,
+      "line-color": "data(color)",
+      "line-opacity": 0.35,
+      "curve-style": "haystack",
+      "haystack-radius": 0,
+    };
+  }
+  return {
+    width: 1.6,
+    "line-color": "data(color)",
+    "curve-style": "haystack",
+    "haystack-radius": 0,
+  };
+}
+
 function networkStyles() {
   const faded = [
     { selector: "node.faded", style: { opacity: 0.15 } },
@@ -3858,7 +4441,9 @@ function networkStyles() {
           "text-background-padding": "2px",
           "text-background-shape": "roundrectangle",
           color: "#1a1f2b",
-          "border-width": 0,
+          "border-width": nodeOverlayBorderWidth,
+          "border-color": nodeOverlayBorderColor,
+          "border-opacity": 1,
         },
       },
       {
@@ -3889,12 +4474,13 @@ function networkStyles() {
       },
       {
         selector: "edge",
+        style: networkEdgeStyle(),
+      },
+      {
+        selector: "edge.discordant",
         style: {
-          width: 2.2,
-          "line-color": "data(color)",
-          "line-opacity": 0.35,
-          "curve-style": "haystack",
-          "haystack-radius": 0,
+          "line-style": "dashed",
+          "line-opacity": 0.9,
         },
       },
       interest,
@@ -3916,17 +4502,21 @@ function networkStyles() {
         "text-valign": "bottom",
         "text-margin-y": 6,
         color: "#1a1f2b",
-        "border-width": 0,
+        "border-width": nodeOverlayBorderWidth,
+        "border-color": nodeOverlayBorderColor,
+        "border-opacity": 1,
       },
     },
     interest,
     {
       selector: "edge",
+      style: networkEdgeStyle(),
+    },
+    {
+      selector: "edge.discordant",
       style: {
-        width: 1.6,
-        "line-color": "data(color)",
-        "curve-style": "haystack",
-        "haystack-radius": 0,
+        "line-style": "dashed",
+        "line-opacity": 0.9,
       },
     },
     ...faded,
@@ -4006,7 +4596,13 @@ function showNodeTooltip(node) {
   const fullName = node.data("fullName") || node.id();
   const groupName = node.data("groupName") || "Neighbor";
   const extra = interestOverlayLine(fullName);
+  const scoreRec = pathwayScoreRecord(fullName);
+  const scoreLine = scoreRec
+    ? `AUC ${formatAuc(scoreRec.auc)} · z ${formatZ(scoreRec.z)} · q ${formatQValue(scoreRec.q)}`
+    : "";
   tip.innerHTML = `<strong>${escapeHtml(fullName)}</strong>${escapeHtml(groupName)}${
+    scoreLine ? `<span class="cy-tooltip-interest">${escapeHtml(scoreLine)}</span>` : ""
+  }${
     extra ? `<span class="cy-tooltip-interest">${escapeHtml(extra)}</span>` : ""
   }`;
   const pos = node.renderedPosition();
@@ -4032,9 +4628,13 @@ function selectNetworkNode(node) {
   const entry = pathwayByName.get(name);
   const collectionInfo = entry && entry.source_db ? ` · ${sourceDbLabel(entry.source_db)}` : "";
   const interestLine = interestOverlayLine(name);
+  const scoreRec = pathwayScoreRecord(name);
+  const scoreLine = scoreRec
+    ? ` · AUC ${formatAuc(scoreRec.auc)} · z ${formatZ(scoreRec.z)} · q ${formatQValue(scoreRec.q)}`
+    : "";
   nodeInfo.innerHTML = `${escapeHtml(name)} — ${deg} connection(s) in this view${escapeHtml(
     collectionInfo
-  )}${interestLine ? ` · ${escapeHtml(interestLine)}` : ""} <button type="button" class="text-btn" data-action="genes">View genes</button>
+  )}${escapeHtml(scoreLine)}${interestLine ? ` · ${escapeHtml(interestLine)}` : ""} <button type="button" class="text-btn" data-action="genes">View genes</button>
     <button type="button" class="text-btn" data-action="links">View connections</button>`;
   const genesBtn = nodeInfo.querySelector('[data-action="genes"]');
   const linksBtn = nodeInfo.querySelector('[data-action="links"]');
@@ -4101,15 +4701,20 @@ function renderNetwork(edges) {
       classes: interestCount ? "interest-hit" : "",
     };
   });
-  const edgeEls = edges.map((e, i) => ({
-    data: {
-      id: `e${i}`,
-      source: e.pathway_a,
-      target: e.pathway_b,
-      correlation: e.correlation,
-      color: edgeColor(e.correlation),
-    },
-  }));
+  const edgeEls = edges.map((e, i) => {
+    const lineStyle = edgeConcordanceStyle(e.correlation, e.pathway_a, e.pathway_b);
+    return {
+      data: {
+        id: `e${i}`,
+        source: e.pathway_a,
+        target: e.pathway_b,
+        correlation: e.correlation,
+        color: edgeColor(e.correlation),
+        lineStyle,
+      },
+      classes: lineStyle === "dashed" ? "discordant" : "",
+    };
+  });
 
   hideNodeTooltip();
   if (cy) {
@@ -4452,6 +5057,7 @@ collectionSelect.addEventListener("change", () => {
   }
   if (startMode === "keywords") renderLandingKeywords();
   if (startMode === "genes" && landingGenesList && landingGenesList.value.trim()) renderLandingGenes();
+  if (startMode === "scores" && landingScoresList && landingScoresList.value.trim()) renderLandingScores();
 });
 function addComparisonGroup() {
   addGroupRow(makeGroup());
@@ -4773,6 +5379,31 @@ if (landingGenesAdd) {
 }
 if (landingGenesBuild) landingGenesBuild.addEventListener("click", () => buildFromLandingGenes());
 if (landingGenesTable) landingGenesTable.querySelector("thead").addEventListener("click", onLandingGeneSortClick);
+if (landingScoresFind) landingScoresFind.addEventListener("click", () => renderLandingScores());
+if (landingScoresSelectAll) landingScoresSelectAll.addEventListener("click", () => setVisibleLandingScoreSelection(true));
+if (landingScoresClearVisible) landingScoresClearVisible.addEventListener("click", () => setVisibleLandingScoreSelection(false));
+if (landingScoresAdd) {
+  landingScoresAdd.addEventListener("click", () => {
+    const added = addLandingScoreSelection();
+    if (added === 0 && landingScoresStatus) {
+      landingScoresStatus.textContent = landingScoreChecked.size
+        ? "Those pathways are already in the query."
+        : "Select one or more pathways, then Add selected.";
+    }
+  });
+}
+if (landingScoresBuild) landingScoresBuild.addEventListener("click", () => buildFromLandingScores());
+if (landingScoresTable) landingScoresTable.querySelector("thead").addEventListener("click", onLandingScoreSortClick);
+document.querySelectorAll(".landing-score-example").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const pairs = (btn.dataset.scores || "").split(";").map((part) => part.trim()).filter(Boolean);
+    if (landingScoresList) {
+      landingScoresList.value = ["gene\tscore", ...pairs.map((pair) => pair.replace(",", "\t"))].join("\n");
+    }
+    renderLandingScores();
+    if (landingScoresList) landingScoresList.focus();
+  });
+});
 document.querySelectorAll(".landing-gene-example").forEach((btn) => {
   btn.addEventListener("click", () => {
     const genes = (btn.dataset.genes || "").trim().split(/\s+/).filter(Boolean);

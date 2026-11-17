@@ -8,7 +8,7 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-dt@3.0.4/css/dataTables.dataTables.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/canvasxpress@69.6.1/src/canvasXpress.css">
-<link rel="stylesheet" href="style.css?v=32">
+<link rel="stylesheet" href="style.css?v=43">
 </head>
 <body>
 
@@ -102,13 +102,19 @@
       <p class="purpose">Pathway Correlation Explorer</p>
       <p>Start with a pathway name, a keyword, or a gene list. Then set tissue, database/collection, and cutoffs in the bar below and build the network.</p>
 
-      <div class="tab-list landing-tab-list" role="tablist" aria-label="Search by">
-        <button type="button" class="tab landing-tab" role="tab" id="start-pathways" data-start="pathways" aria-selected="true" aria-controls="landingPanelPathways">Search/Select Pathways by List/Browsing</button>
-        <button type="button" class="tab landing-tab" role="tab" id="start-keywords" data-start="keywords" aria-selected="false" aria-controls="landingPanelKeywords">Search/Select Pathways by Keyword</button>
-        <button type="button" class="tab landing-tab" role="tab" id="start-genes" data-start="genes" aria-selected="false" aria-controls="landingPanelGenes">Search/Select Pathways by Gene List</button>
+      <div class="landing-start">
+      <div class="landing-tab-list" role="tablist" aria-label="Search methods">
+        <button type="button" class="landing-tab" role="tab" id="start-pathways" data-start="pathways" aria-selected="true" aria-controls="landingPanelPathways">Search/Select Pathways by List/Browsing</button>
+        <button type="button" class="landing-tab" role="tab" id="start-keywords" data-start="keywords" aria-selected="false" aria-controls="landingPanelKeywords">Search/Select Pathways by Keyword</button>
+        <button type="button" class="landing-tab" role="tab" id="start-genes" data-start="genes" aria-selected="false" aria-controls="landingPanelGenes">Search/Select Pathways by Gene List</button>
+        <button type="button" class="landing-tab" role="tab" id="start-scores" data-start="scores" aria-selected="false" aria-controls="landingPanelScores">
+          <span>Search/Select Pathways by Gene Scores <span class="landing-acc-sub">(Browser-based Mann-Whitney U test)</span></span>
+          <span class="landing-badge">New</span>
+        </button>
       </div>
-
+      <div class="landing-body">
       <div id="landingPanelPathways" class="landing-panel" role="tabpanel" aria-labelledby="start-pathways">
+        <div id="emptyCatalog" class="catalog-stat" hidden></div>
         <p class="examples">
           <span class="examples-hint">Click a linked example to fill the search box and default parameters.</span>
           Examples:
@@ -193,13 +199,59 @@
         </div>
       </div>
 
+      <div id="landingPanelScores" class="landing-panel" role="tabpanel" aria-labelledby="start-scores" hidden>
+        <label class="field-label" for="landingScoresList">Gene scores</label>
+        <p class="from-genes-examples">
+          <span class="examples-hint">Click a linked example to fill the search box and default parameters.</span>
+          Examples:
+          <button type="button" class="example-chip landing-score-example" data-scores="CD68,2.9;ITGAM,2.6;CD14,2.4;IL6,2.8;TNF,2.5;CXCL8,2.2;NLRP3,2.1;TLR4,1.9;CCL2,2.0;IL1B,2.3;NDUFA1,-2.7;SDHA,-2.4;COX4I1,-2.5;CS,-2.2;MDH2,-2.1;CPT1B,-1.9;HADHA,-2.0;PPARGC1A,-1.8;ADIPOQ,-1.7;FH,-2.3" title="Fill the search box and default parameters">Inflammation vs oxidative (illustrative t-stats)</button>,
+          <button type="button" class="example-chip landing-score-example" data-scores="TP53,3.4;CDKN1A,3.1;BAX,2.6;MDM2,2.2;GADD45A,2.0;FAS,1.7;SFN,1.5;CCNG1,1.4;DDB2,1.6;BBC3,2.3" title="Fill the search box and default parameters">p53 response (illustrative t-stats)</button>
+        </p>
+        <p class="from-genes-examples-note">illustrative ranking statistics, not experimental data. Prefer a t-stat; log2 fold change also works.</p>
+        <textarea id="landingScoresList" rows="8" placeholder="gene	score
+TP53	3.2
+MDM2	-1.1"></textarea>
+        <p class="hint">Paste a gene and a numeric score (t-stat, log2 fold change, or another ranking metric), tab- or comma-separated. Genes not in this catalog are dropped, then the rest are re-ranked 1…N for a Mann–Whitney U test of each pathway versus that background.</p>
+        <div class="from-genes-cutoff">
+          <label for="landingScoresQCutoff">q-value &lt;</label>
+          <input id="landingScoresQCutoff" type="number" min="0" max="1" step="0.001" value="0.05">
+          <button type="button" id="landingScoresFind">Test pathways</button>
+        </div>
+        <p id="landingScoresStatus" class="hint"></p>
+        <div class="bulk-lookup-toolbar">
+          <span id="landingScoresCount"></span>
+          <button type="button" id="landingScoresSelectAll" class="text-btn">Select all</button>
+          <button type="button" id="landingScoresClearVisible" class="text-btn">Clear visible</button>
+        </div>
+        <div class="from-genes-table-wrap">
+          <table id="landingScoresTable">
+            <thead>
+              <tr>
+                <th></th>
+                <th data-sort="name" aria-sort="none">Pathway</th>
+                <th data-sort="n1" aria-sort="none">Members</th>
+                <th data-sort="auc" aria-sort="none">AUC</th>
+                <th data-sort="z" aria-sort="none">z</th>
+                <th data-sort="q" aria-sort="ascending">q</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="bulk-lookup-actions landing-gene-actions">
+          <button type="button" id="landingScoresAdd">Add selected</button>
+          <button type="button" id="landingScoresBuild">Add and build</button>
+        </div>
+      </div>
+      </div>
+      </div>
+
       <div id="landingSeedBar" class="landing-seed-bar" hidden>
         <p class="landing-seed-label">Selected pathways</p>
         <div id="landingSeedChips" class="chip-list"></div>
         <p class="hint">These pathways are in the query. Use the bar at the bottom to review tissue, database/collection, and cutoffs, then Build network. Click <strong>Query pathways</strong> in that bar to see or edit the list, or Compare another group to color two sets on the same network.</p>
       </div>
 
-      <div id="emptyCatalog" class="catalog-stat" hidden></div>
     </section>
 
     <section id="results" hidden>
@@ -229,6 +281,8 @@
         <div class="section-head network-section-head">
           <h2>Network graph</h2>
           <div class="network-tools">
+            <fieldset class="graphic-options">
+              <legend>Graphic options</legend>
             <div class="network-tools-row">
               <div class="network-style" role="group" aria-label="Network style">
                 <span class="field-label">Style</span>
@@ -262,6 +316,7 @@
                 </select>
               </label>
             </div>
+            </fieldset>
             <div class="network-tools-row">
               <button type="button" id="interestSearchButton" aria-expanded="false" aria-controls="interestGenesPanel">Search genes in network</button>
               <button type="button" id="fitButton">Fit</button>
@@ -307,6 +362,7 @@
         <p id="emLegendNote" class="legend-note">Red edges are positive correlation, blue negative. Click a node to highlight its neighbors.</p>
         <p id="hubmapLegendNote" class="legend-note" hidden>Named clusters group related pathways. Red edges are positive correlation, blue negative. Click a node or a table row to highlight neighbors.</p>
         <p id="interestLegendNote" class="legend-note" hidden>Brown ring: the pathway contains genes of interest.</p>
+        <p id="scoreLegendNote" class="legend-note" hidden>Node fill is pathway AUC from the gene-score test (blue = down, red = up; color scale capped at 0.25–0.75). Edge color is still GTEx correlation (red positive, blue negative). Solid edges agree with those scores; dashed edges are discordant with GTEx. Dashed does not mean the tissue rewired.</p>
         <div class="graph-nodes">
           <div class="section-head">
             <h3>Pathways in this graph</h3>
@@ -334,6 +390,7 @@
                   <th scope="col">Edges</th>
                   <th scope="col">Genes</th>
                   <th scope="col">My genes</th>
+                  <th scope="col">AUC</th>
                   <th scope="col">Linked Pathways</th>
                 </tr>
               </thead>
@@ -393,8 +450,8 @@
   <form method="dialog">
     <h2>About</h2>
     <p>The question this tool answers: which pathways correlate with the one you are studying?</p>
-    <p>PCxN Explore rebuilds the old "top N neighbors" view as static files. Start from Search/Select Pathways by List/Browsing, Search/Select Pathways by Keyword, or Search/Select Pathways by Gene List, then Build network — the page fetches each selected pathway's slice, ranks their combined topN neighbors, and draws the induced graph. Nodes are colored by which group they came from; discovered neighbors are blue.</p>
-    <p>Sliders re-filter the current result without another fetch, using absolute correlation (|r|) and FDR. A single-pathway query will lower the correlation cutoff if fewer than Top N FDR-significant partners exist, and show a banner on the network. Click a node to highlight its neighborhood. Use Pathway names Short or Full, Size, and Font on the graph. Search genes in network opens a panel above the graph so you can overlay genes of interest (brown ring) and see the result immediately. The URL keeps the query (including every group and pathway) so you can send someone the same neighborhood.</p>
+    <p>PCxN Explore rebuilds the old "top N neighbors" view as static files. Start from Search/Select Pathways by List/Browsing, Search/Select Pathways by Keyword, Search/Select Pathways by Gene List, or Search/Select Pathways by Gene Scores, then Build network — the page fetches each selected pathway's slice, ranks their combined topN neighbors, and draws the induced graph. Nodes are colored by which group they came from unless a gene-score test is active, in which case fill shows pathway AUC on the GTEx graph; discovered neighbors are blue when no score overlay is applied.</p>
+    <p>Sliders re-filter the current result without another fetch, using absolute correlation (|r|) and FDR. A single-pathway query will lower the correlation cutoff if fewer than Top N FDR-significant partners exist, and show a banner on the network. Click a node to highlight its neighborhood. Use Pathway names Short or Full, Size, and Font on the graph. Search genes in network opens a panel above the graph so you can overlay genes of interest (brown ring) and see the result immediately. Gene scores run a Mann–Whitney U test on the catalog, then paint AUC on nodes and mark GTEx edges solid (concordant) or dashed (discordant with GTEx). The URL keeps the query (including every group and pathway) so you can send someone the same neighborhood.</p>
     <button type="submit" value="close">Close</button>
   </form>
 </dialog>
@@ -495,6 +552,6 @@
 <script src="https://cdn.jsdelivr.net/npm/datatables.net-dt@3.0.4/js/dataTables.dataTables.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvasxpress@69.6.1/src/canvasXpress.js"></script>
 <script src="config.js"></script>
-<script src="app.js?v=38"></script>
+<script src="app.js?v=42"></script>
 </body>
 </html>

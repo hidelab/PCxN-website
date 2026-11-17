@@ -1,92 +1,118 @@
 :root {
-  --border: #e2e5ea;
-  --text: #1f2933;
-  --muted: #6b7280;
-  --accent: #0e7c86;
-  --accent-hover: #0b656d;
-  --accent-soft: #e6f4f5;
-  --bg: #f7f8fa;
-  --panel: #ffffff;
-  --bg-alt: #f3f4f6;
-  --error-bg: #fef2f2;
-  --error-border: #fecaca;
-  --error-text: #991b1b;
+  --border: #999;
+  --text: #222;
+  --muted: #555;
+  --accent: #336699;
+  --accent-hover: #254a73;
+  --accent-soft: #eee;
+  --link: #0000ee;
+  --link-hover: #0000cc;
+  --bg: #fff;
+  --panel: #fff;
+  --bg-alt: #f0f0f0;
+  --error-bg: #fcc;
+  --error-border: #c00;
+  --error-text: #c00;
   --shadow: none;
-  --focus: #9ed8dc;
+  --focus: #666;
 }
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 
 body {
-  font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
   color: var(--text);
   background: var(--bg);
   margin: 0;
   padding: 0;
-  line-height: 1.45;
+  line-height: 1.4;
 }
 
 header {
-  background: var(--panel);
-  border-bottom: 1px solid var(--border);
+  background: #336699;
+  border-bottom: 1px solid #254a73;
+  color: #fff;
 }
 .header-row {
   display: flex;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   align-items: center;
-  max-width: 1120px;
+  max-width: 960px;
   margin: 0 auto;
-  padding: 14px 24px;
+  padding: 6px 10px;
 }
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: inherit;
+  gap: 8px;
+  color: #fff;
   text-decoration: none;
   min-width: 0;
 }
+.brand:hover { color: #fff; }
 .brand img {
   flex: none;
-  border-radius: 6px;
+  border-radius: 0;
+  background: #fff;
 }
 h1 {
   margin: 0;
-  font-size: 1.2rem;
-  font-weight: 650;
-  letter-spacing: -0.01em;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #fff;
 }
-.subtitle { margin: 2px 0 0; color: var(--muted); font-size: 0.82rem; }
+.subtitle { margin: 1px 0 0; color: #dbe7f3; font-size: 11px; }
 
-.header-links { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
-.header-links a, .text-btn, button.text-btn {
-  color: var(--accent);
+a { color: var(--link); }
+a:hover { color: var(--link-hover); }
+.header-links { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.text-btn, button.text-btn {
+  color: var(--link);
   background: none;
   border: 0;
   padding: 0;
   font: inherit;
-  font-size: 0.88rem;
+  font-size: 13px;
   cursor: pointer;
-  text-decoration: none;
+  text-decoration: underline;
 }
-.header-links a:hover, .text-btn:hover, button.text-btn:hover { text-decoration: underline; }
+.text-btn:hover, button.text-btn:hover {
+  color: var(--link-hover);
+  text-decoration: underline;
+}
+.header-links a, .header-links .text-btn, .header-links button.text-btn {
+  color: #ff6;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.header-links a:hover, .header-links .text-btn:hover, .header-links button.text-btn:hover {
+  color: #fff;
+  text-decoration: underline;
+}
 
 .page {
-  max-width: 1120px;
+  max-width: 960px;
   margin: 0 auto;
-  padding: 20px 24px 40px;
+  padding: 8px 10px 24px;
 }
 
 .error-banner {
   background: var(--error-bg);
   border: 1px solid var(--error-border);
   color: var(--error-text);
-  padding: 10px 14px;
-  border-radius: 8px;
-  margin: 0 0 16px;
-  font-size: 0.9rem;
+  padding: 6px 8px;
+  border-radius: 0;
+  margin: 0 0 10px;
+  font-size: 13px;
   white-space: pre-line;
   display: flex;
   justify-content: space-between;
@@ -112,12 +138,12 @@ main.query-dock-bottom #query-form {
   left: 50%;
   bottom: 0;
   transform: translateX(-50%);
-  width: min(1072px, calc(100% - 48px));
+  width: min(940px, calc(100% - 20px));
   z-index: 40;
   flex-direction: column-reverse;
   max-height: min(72vh, 680px);
   overflow: auto;
-  box-shadow: 0 -8px 24px rgba(15, 23, 32, 0.1);
+  box-shadow: none;
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
 }
@@ -142,11 +168,11 @@ main.query-dock-bottom #index-meta {
 #query-form {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 10px 12px 8px;
-  background: var(--panel);
+  gap: 6px;
+  border: 1px solid #999;
+  border-radius: 0;
+  padding: 6px 8px;
+  background: #f5f5f5;
   min-width: 0;
 }
 
@@ -183,13 +209,13 @@ main.query-dock-bottom #index-meta {
   position: relative;
   width: 100%;
   text-align: left;
-  padding: 7px 22px 7px 9px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  padding: 2px 18px 2px 4px;
+  border: 1px solid #888;
+  border-radius: 0;
   background: #fff;
-  font-size: 0.92rem;
+  font-size: 13px;
   font-family: inherit;
-  color: var(--text);
+  color: #000;
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
@@ -203,17 +229,17 @@ main.query-dock-bottom #index-meta {
 }
 .seeds-summary[aria-expanded="true"]::after { content: "▴"; }
 button.seeds-summary:hover {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-  color: var(--text);
+  background: #f3f3f3;
+  border-color: #555;
+  color: #111;
 }
 .seeds-summary[aria-expanded="true"] {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+  border-color: #555;
+  background: #f3f3f3;
 }
 .seeds-summary:focus {
-  outline: 2px solid var(--focus);
-  border-color: var(--accent);
+  outline: 1px solid #555;
+  border-color: #555;
 }
 .seeds-panel {
   margin-top: 2px;
@@ -238,8 +264,8 @@ button.seeds-summary:hover {
 #query-form .tissue-chip-list { display: none; }
 #query-form .toolbar-actions button { margin-top: 0; }
 
-.field-row { display: flex; flex-direction: column; gap: 5px; }
-.field-row label, .field-label { font-size: 0.78rem; color: var(--muted); letter-spacing: 0.01em; }
+.field-row { display: flex; flex-direction: column; gap: 3px; }
+.field-row label, .field-label { font-size: 12px; color: var(--muted); letter-spacing: 0; }
 .param-grid {
   display: grid;
   gap: 10px;
@@ -248,23 +274,23 @@ button.seeds-summary:hover {
 .tissue-summary {
   width: 100%;
   text-align: left;
-  padding: 7px 9px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  padding: 2px 4px;
+  border: 1px solid #888;
+  border-radius: 0;
   background: #fff;
-  font-size: 0.92rem;
+  font-size: 13px;
   font-family: inherit;
-  color: var(--text);
+  color: #000;
   cursor: pointer;
 }
 button.tissue-summary:hover {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-  color: var(--text);
+  background: #f3f3f3;
+  border-color: #555;
+  color: #111;
 }
 .tissue-summary:focus {
-  outline: 2px solid var(--focus);
-  border-color: var(--accent);
+  outline: 1px solid #555;
+  border-color: #555;
 }
 .tissue-menu { padding: 6px 0 4px; }
 .tissue-filter {
@@ -272,27 +298,27 @@ button.tissue-summary:hover {
   width: calc(100% - 16px);
   margin: 0 8px 4px;
   padding: 6px 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  border: 1px solid #777;
+  border-radius: 0;
   font-size: 0.9rem;
   font-family: inherit;
 }
 .tissue-menu-list { margin: 0; padding: 0; list-style: none; }
 .tissue-menu-list .combo-name { text-transform: capitalize; }
 .field-row input:not([type="range"]), .field-row select, .network-tools select, .group-pathway-input {
-  padding: 7px 9px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  font-size: 0.92rem;
+  padding: 2px 4px;
+  border: 1px solid #888;
+  border-radius: 0;
+  font-size: 13px;
   font-family: inherit;
   background: #fff;
-  color: var(--text);
+  color: #000;
 }
 .group-pathway-input { width: 100%; }
 .field-row input:not([type="range"]):focus, .field-row select:focus, .network-tools select:focus,
 .group-pathway-input:focus, .tissue-filter:focus {
-  outline: 2px solid var(--focus);
-  border-color: var(--accent);
+  outline: 1px solid #555;
+  border-color: #555;
 }
 .field-row.buttons { flex-direction: row; gap: 8px; align-items: center; }
 
@@ -305,8 +331,8 @@ button.tissue-summary:hover {
 
 .groups-field, .group-row { min-width: 0; }
 .group-row {
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  border: 1px solid #888;
+  border-radius: 0;
   padding: 10px;
   margin-bottom: 10px;
   background: #fff;
@@ -362,9 +388,9 @@ button.tissue-summary:hover {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: var(--bg-alt);
-  border: 1px solid var(--border);
-  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #888;
+  border-radius: 0;
   padding: 2px 4px 2px 10px;
   font-size: 0.82rem;
   max-width: 100%;
@@ -395,7 +421,15 @@ button.tissue-summary:hover {
 .tissue-chip-list { margin: 2px 0 0; }
 .tissue-chip-list .chip-label { text-transform: capitalize; }
 
-.hint { font-size: 0.78rem; color: var(--muted); margin: 4px 0 0; }
+.hint {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin: 4px 0 0;
+  background: none;
+  border: 0;
+  padding: 0;
+  border-radius: 0;
+}
 .hint.warn { color: var(--error-text); }
 
 .legend-list {
@@ -415,6 +449,7 @@ button.tissue-summary:hover {
   border-radius: 50%;
   display: inline-block;
   flex: none;
+  border: 1px solid var(--border);
 }
 .legend-note { font-size: 0.8rem; color: var(--muted); margin: 0; }
 
@@ -425,8 +460,8 @@ button.tissue-summary:hover {
 }
 .graph-nodes h3 {
   margin: 0;
-  font-size: 0.95rem;
-  font-weight: 650;
+  font-size: 14px;
+  font-weight: 700;
 }
 .graph-node-tools {
   display: flex;
@@ -442,14 +477,14 @@ button.tissue-summary:hover {
 .interest-genes {
   margin: 0 0 14px;
   padding: 12px 12px 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg-alt);
+  border: 1px solid #888;
+  border-radius: 0;
+  background: #fff;
 }
 .interest-genes label {
   display: block;
-  font-size: 0.82rem;
-  font-weight: 650;
+  font-size: 13px;
+  font-weight: 700;
   color: var(--text);
 }
 #interestGenesList {
@@ -457,15 +492,15 @@ button.tissue-summary:hover {
   margin-top: 6px;
   min-height: 4.5em;
   padding: 7px 9px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  border: 1px solid #777;
+  border-radius: 0;
   font: inherit;
   font-size: 0.9rem;
   resize: vertical;
 }
 #interestGenesList:focus {
-  outline: 2px solid var(--focus);
-  border-color: var(--accent);
+  outline: 1px solid #555;
+  border-color: #555;
 }
 .interest-genes-actions {
   display: flex;
@@ -486,8 +521,8 @@ button.tissue-summary:hover {
 .graph-node-table-wrap {
   max-height: 420px;
   overflow: auto;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: 1px solid #888;
+  border-radius: 0;
   background: #fff;
 }
 #graphNodeTable {
@@ -505,11 +540,11 @@ button.tissue-summary:hover {
 #graphNodeTable th {
   position: sticky;
   top: 0;
-  background: var(--bg-alt);
-  color: var(--muted);
-  font-weight: 600;
-  font-size: 0.75rem;
-  letter-spacing: 0.02em;
+  background: #e0e0e0;
+  color: #000;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0;
 }
 #graphNodeTable tr:last-child td { border-bottom: 0; }
 #graphNodeTable tr.is-hidden td { color: var(--muted); }
@@ -522,7 +557,7 @@ button.tissue-summary:hover {
 }
 #graphNodeTable .graph-edges,
 #graphNodeTable .graph-my-genes { white-space: nowrap; }
-#graphNodeTable .graph-my-genes.has-hits { font-weight: 650; color: #b45309; }
+#graphNodeTable .graph-my-genes.has-hits { font-weight: 700; color: #b45309; }
 #graphNodeTable .graph-swatch {
   width: 8px;
   height: 8px;
@@ -544,9 +579,9 @@ button.tissue-summary:hover {
   max-height: 320px;
   overflow: auto;
   background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  border: 1px solid #888;
+  border-radius: 0;
+  box-shadow: none;
 }
 .combobox-menu li { padding: 0; cursor: pointer; }
 .combobox-menu li:hover,
@@ -565,31 +600,21 @@ button.tissue-summary:hover {
 .combo-empty { color: var(--muted); cursor: default; padding: 6px 10px; }
 
 button {
-  padding: 7px 16px;
-  border: 1px solid var(--accent);
-  border-radius: 4px;
-  background: var(--accent);
-  color: #fff;
+  padding: 2px 8px;
+  border: 1px solid #888;
+  border-radius: 0;
+  background: #e6e6e6;
+  color: #000;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 13px;
   font-family: inherit;
+  font-weight: 400;
+  box-shadow: none;
 }
-button:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
-button#resetButton, button#fitButton, button#interestSearchButton, button#interestGenesClose, button#saveNetworkPngButton, button#saveHeatmapPngButton,
-button#saveNetworkCsvButton, button#exportCsvButton, button#copyLinkButton,
-button#graphAddButton, button#graphShowAll, button#copyPathwaysButton, button#copyGenesButton,
-button#copyPathwayGenesButton, button#copyPathwayLinksButton,
-dialog button {
-  background: #fff;
-  color: var(--accent);
-}
-button#resetButton:hover, button#fitButton:hover, button#interestSearchButton:hover, button#interestGenesClose:hover, button#saveNetworkPngButton:hover,
-button#saveHeatmapPngButton:hover, button#saveNetworkCsvButton:hover, button#exportCsvButton:hover,
-button#copyLinkButton:hover, button#graphAddButton:hover, button#graphShowAll:hover,
-button#copyPathwaysButton:hover, button#copyGenesButton:hover, button#copyPathwayGenesButton:hover,
-button#copyPathwayLinksButton:hover,
-dialog button:hover {
-  background: var(--accent-soft);
+button:hover {
+  background: #d4d4d4;
+  border-color: #666;
+  color: #000;
 }
 button:disabled { opacity: 0.55; cursor: wait; }
 
@@ -599,53 +624,126 @@ body:has(#results:not([hidden])) #query-status { display: none; }
 
 #workspace {
   min-width: 0;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 20px 22px 24px;
+  background: #fff;
+  border: 1px solid #999;
+  border-radius: 0;
+  padding: 10px 10px 14px;
 }
 
-#landing { padding: 24px 0 8px; color: var(--muted); text-align: center; }
-#landing > p { margin: 0 auto 12px; line-height: 1.55; max-width: 40em; }
+#landing { padding: 8px 0 6px; color: #222; text-align: left; }
+#landing > p { margin: 0 0 10px; line-height: 1.4; max-width: none; color: #222; text-align: left; }
 #landing .purpose {
-  max-width: 36em;
-  margin-bottom: 24px;
-  color: var(--text);
-  font-size: 1.45rem;
-  font-weight: 600;
-  line-height: 1.3;
-  letter-spacing: -0.02em;
+  max-width: none;
+  margin: 0 0 8px;
+  color: #000;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0;
+  text-align: left;
 }
-.tab-list.landing-tab-list {
+.landing-start {
+  max-width: none;
+  margin: 8px 0 8px;
+  text-align: left;
+}
+.landing-tab-list {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  max-width: 58em;
-  margin: 8px auto 32px;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border: 1px solid #999;
+  border-bottom: 0;
+  background: #d4d0c8;
 }
 .landing-tab {
-  white-space: normal;
-  text-align: center;
-  line-height: 1.3;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
   width: 100%;
-  padding: 8px 10px 10px;
+  margin: 0;
+  padding: 6px 8px;
+  border: 0;
+  border-right: 1px solid #999;
+  border-bottom: 1px solid #999;
+  border-radius: 0;
+  background: #d4d0c8;
+  color: #000;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: left;
+  cursor: pointer;
+}
+.landing-tab:nth-child(2n) { border-right: 0; }
+.landing-tab:hover { background: #c4c0b8; color: #000; }
+.landing-tab[aria-selected="true"] {
+  background: #e8eef4;
+  color: #000;
+}
+.landing-acc-sub {
+  font-weight: 400;
+  color: #333;
+}
+.landing-badge {
+  flex: none;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #333;
+  background: #eee;
+  border: 1px solid #999;
+  border-radius: 0;
+  padding: 1px 7px;
+}
+.landing-body {
+  border: 1px solid #999;
+  background: #e8eef4;
+  color: #000;
 }
 .landing-panel {
   text-align: left;
-  max-width: 46em;
-  margin: 0 auto 16px;
+  max-width: none;
+  margin: 0;
+  padding: 12px 14px 14px;
+}
+#landing .landing-panel button:not(.example-chip):not(.text-btn):not(.landing-tab) {
+  background: #e6e6e6;
+  color: #000;
+  border: 1px solid #888;
+  border-radius: 0;
+  box-shadow: none;
+  font-weight: 400;
+}
+#landing .landing-panel button:not(.example-chip):not(.text-btn):not(.landing-tab):hover {
+  background: #d4d4d4;
+  border-color: #666;
+  color: #000;
+}
+#landing .from-genes-cutoff input,
+#landing .landing-panel textarea {
+  border-radius: 0;
+  border: 1px solid #777;
+}
+#landing .from-genes-table-wrap {
+  border-radius: 0;
+  border: 1px solid #888;
 }
 .landing-combobox { width: 100%; }
 #landingPathwayInput {
-  padding: 12px 14px;
-  font-size: 1rem;
-  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 0.95rem;
+  border-radius: 0;
+  border: 1px solid #777;
+  background: #fff;
 }
 .landing-panel textarea {
   width: 100%;
   min-height: 88px;
   padding: 6px 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  border: 1px solid #777;
+  border-radius: 0;
+  background: #fff;
   font: inherit;
   font-size: 0.95rem;
   resize: vertical;
@@ -675,7 +773,7 @@ body:has(#results:not([hidden])) #query-status { display: none; }
 }
 .landing-panel .bulk-lookup-toolbar .text-btn { margin-top: 0; }
 .landing-panel .from-genes-cutoff { justify-content: flex-start; }
-#landingKeywordCount, #landingGenesCount {
+#landingKeywordCount, #landingGenesCount, #landingScoresCount {
   font-size: 0.8rem;
   color: var(--muted);
   flex: 1;
@@ -709,22 +807,88 @@ body:has(#results:not([hidden])) #query-status { display: none; }
   text-align: left;
 }
 #landingGenesTable .from-genes-empty:hover { background: none; }
+#landingScoresTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+#landingScoresTable th, #landingScoresTable td {
+  padding: 5px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+#landingScoresTable th { color: var(--muted); font-weight: 600; position: sticky; top: 0; background: #fff; }
+#landingScoresTable th[data-sort] { cursor: pointer; user-select: none; }
+#landingScoresTable th[data-sort][aria-sort="ascending"]::after { content: " \2191"; }
+#landingScoresTable th[data-sort][aria-sort="descending"]::after { content: " \2193"; }
+#landingScoresTable td:nth-child(3),
+#landingScoresTable td:nth-child(4),
+#landingScoresTable td:nth-child(5),
+#landingScoresTable td:nth-child(6) { text-align: right; white-space: nowrap; }
+#landingScoresTable tbody tr { cursor: pointer; }
+#landingScoresTable tbody tr:hover { background: var(--accent-soft); }
+#landingScoresTable input { pointer-events: none; }
+#landingScoresTable .from-genes-empty {
+  color: var(--muted);
+  cursor: default;
+  text-align: left;
+}
+#landingScoresTable .from-genes-empty:hover { background: none; }
 .landing-gene-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.legend-auc {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.legend-auc-bar {
+  flex: 1;
+  height: 10px;
+  max-width: 220px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2166ac 0%, #f7f7f7 50%, #b2182b 100%);
+  border: 1px solid var(--border);
+}
+.legend-edge-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.legend-edge-key span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.legend-edge-sample {
+  width: 28px;
+  height: 0;
+  border-top: 2px solid #b2182b;
+}
+.legend-edge-sample.is-dashed {
+  border-top-style: dashed;
+  border-top-color: #2166ac;
+}
 .landing-seed-bar {
   text-align: left;
-  max-width: 46em;
-  margin: 0 auto 16px;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--bg-alt);
+  max-width: none;
+  margin: 0 0 10px;
+  padding: 8px;
+  border: 1px solid #999;
+  border-radius: 0;
+  background: #f5f5f5;
 }
 .landing-seed-label {
   margin: 0 0 6px;
   font-size: 0.78rem;
   color: var(--muted);
 }
-.examples, .empty-genes { font-size: 0.92rem; max-width: 46em; }
+.examples, .empty-genes { font-size: 13px; max-width: none; }
 .examples-hint {
   display: block;
   margin: 0 0 8px;
@@ -735,44 +899,37 @@ body:has(#results:not([hidden])) #query-status { display: none; }
 .landing-panel .from-genes-examples { margin: 0 0 8px; }
 .landing-panel .from-genes-examples-note { margin: 2px 0 24px; }
 .catalog-stat {
-  display: flex;
-  justify-content: stretch;
-  max-width: 36em;
-  margin: 48px auto 8px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--panel);
-  overflow: hidden;
+  margin: 0 0 16px;
+  max-width: none;
 }
-.catalog-stat-cell {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 12px 14px;
-  border-right: 1px solid var(--border);
-  min-width: 0;
+.catalog-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid #888;
+  font-size: 0.9rem;
 }
-.catalog-stat-cell:last-child { border-right: 0; }
-.catalog-stat-cell strong {
-  font-size: 1.15rem;
-  font-weight: 650;
-  color: var(--text);
-  letter-spacing: -0.02em;
-  line-height: 1.2;
-}
-.catalog-stat-cell span {
-  font-size: 0.75rem;
-  color: var(--muted);
+.catalog-table th,
+.catalog-table td {
+  border: 1px solid #888;
+  padding: 6px 8px;
   text-align: center;
+}
+.catalog-table th {
+  background: #e9e9e9;
+  color: #222;
+  font-weight: 700;
+}
+.catalog-table td {
+  color: #222;
+  font-weight: 700;
 }
 .example-chip {
   display: inline;
   padding: 0;
   border: 0;
   background: none;
-  color: var(--accent);
+  color: var(--link);
   font: inherit;
   cursor: pointer;
   text-decoration: underline;
@@ -780,7 +937,7 @@ body:has(#results:not([hidden])) #query-status { display: none; }
 button.example-chip:hover {
   background: none;
   border: 0;
-  color: var(--accent-hover);
+  color: var(--link-hover);
   text-decoration: underline;
 }
 
@@ -796,28 +953,40 @@ button.example-chip:hover {
 
 .tab-list {
   display: flex;
+  flex-wrap: wrap;
   gap: 0;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 12px;
+  border: 1px solid #999;
+  margin-bottom: 8px;
+  background: #e0e0e0;
+  max-width: 100%;
+  min-width: 0;
 }
-.tissue-tab-list { margin-bottom: 0; }
-.tissue-tab-list .tissue-tab { text-transform: capitalize; }
+.tissue-tab-list {
+  margin-bottom: 0;
+  overflow-x: auto;
+}
+.tissue-tab-list .tissue-tab {
+  text-transform: capitalize;
+  flex: none;
+  white-space: nowrap;
+  max-width: 100%;
+}
 .tissue-tab.is-error { color: #b42318; }
 .tab {
-  background: none;
+  background: #e0e0e0;
   border: 0;
-  border-bottom: 2px solid transparent;
-  color: var(--muted);
-  padding: 8px 14px;
-  margin-bottom: -1px;
-  font-size: 0.9rem;
+  border-right: 1px solid #999;
+  color: #000;
+  padding: 4px 10px;
+  margin-bottom: 0;
+  font-size: 13px;
+  font-weight: 700;
   border-radius: 0;
 }
-.tab:hover { color: var(--text); background: none; border-color: transparent; }
+.tab:hover { color: #000; background: #d0d0d0; border-color: #999; }
 .tab[aria-selected="true"] {
-  color: var(--text);
-  border-bottom-color: var(--accent);
-  background: none;
+  color: #000;
+  background: #fff;
 }
 
 #live-filters {
@@ -861,9 +1030,9 @@ button.example-chip:hover {
   height: 16px;
   margin-top: -5px;
   border-radius: 50%;
-  background: var(--accent);
+  background: #555;
   border: 2px solid #fff;
-  box-shadow: 0 0 0 1px var(--accent);
+  box-shadow: 0 0 0 1px #777;
   cursor: pointer;
 }
 #live-filters input[type="range"]::-moz-range-track {
@@ -878,8 +1047,8 @@ button.example-chip:hover {
   height: 16px;
   border: 2px solid #fff;
   border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent);
+  background: #555;
+  box-shadow: 0 0 0 1px #777;
   cursor: pointer;
 }
 #live-filters input[type="range"]:focus {
@@ -898,7 +1067,7 @@ button.example-chip:hover {
   flex-wrap: wrap;
   margin-bottom: 8px;
 }
-section h2 { font-size: 1.05rem; margin: 0 0 8px; }
+section h2 { font-size: 14px; margin: 0 0 6px; }
 .section-head h2 { margin: 0; }
 .network-section-head {
   flex-direction: column;
@@ -910,6 +1079,18 @@ section h2 { font-size: 1.05rem; margin: 0 0 8px; }
   gap: 8px;
   font-size: 0.85rem;
   color: var(--muted);
+}
+.graphic-options {
+  margin: 0;
+  padding: 4px 8px 8px;
+  border: 1px solid #999;
+  min-width: 0;
+}
+.graphic-options legend {
+  padding: 0 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #000;
 }
 .network-tools-row {
   display: flex;
@@ -940,26 +1121,26 @@ section h2 { font-size: 1.05rem; margin: 0 0 8px; }
 .interest-genes-panel .interest-genes { margin: 0; }
 .interest-genes-panel button { margin-top: 0; }
 #interestSearchButton[aria-expanded="true"] {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-  color: var(--text);
+  background: #d9d9d9;
+  border-color: #555;
+  color: #111;
 }
 .style-toggle {
   margin-top: 0;
-  padding: 4px 9px;
-  border: 1px solid var(--border);
-  background: #fff;
-  color: var(--muted);
-  font-size: 0.82rem;
-  border-radius: 6px;
+  padding: 1px 6px;
+  border: 1px solid #888;
+  background: #e6e6e6;
+  color: #000;
+  font-size: 12px;
+  border-radius: 0;
 }
-.style-toggle:hover { background: var(--accent-soft); color: var(--text); }
+.style-toggle:hover { background: #d4d4d4; color: #000; }
 .style-toggle[aria-pressed="true"] {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
+  background: #d9d9d9;
+  border-color: #555;
+  color: #111;
 }
-.style-toggle[aria-pressed="true"]:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: #fff; }
+.style-toggle[aria-pressed="true"]:hover { background: #cccccc; border-color: #555; color: #111; }
 
 .cy-wrap { position: relative; }
 .threshold-banner {
@@ -972,10 +1153,10 @@ section h2 { font-size: 1.05rem; margin: 0 0 8px; }
   align-items: flex-start;
   gap: 10px;
   padding: 8px 10px;
-  background: var(--accent-soft);
-  border: 1px solid #9dbdce;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+  background: #ffc;
+  border: 1px solid #990;
+  border-radius: 0;
+  box-shadow: none;
   color: var(--text);
   font-size: 0.82rem;
   line-height: 1.35;
@@ -1005,9 +1186,9 @@ section h2 { font-size: 1.05rem; margin: 0 0 8px; }
   width: 24px;
   height: 24px;
   padding: 0;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
+  border: 1px solid #777;
+  border-radius: 2px;
+  background: #fff;
   color: inherit;
   font-size: 1.15rem;
   line-height: 1;
@@ -1018,8 +1199,8 @@ section h2 { font-size: 1.05rem; margin: 0 0 8px; }
   width: 100%;
   height: min(70vh, 800px);
   min-height: 520px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  border: 1px solid #888;
+  border-radius: 0;
   background: white;
 }
 .cy-nav {
@@ -1032,23 +1213,23 @@ section h2 { font-size: 1.05rem; margin: 0 0 8px; }
   gap: 4px;
   padding: 4px;
   background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+  border: 1px solid #888;
+  border-radius: 0;
+  box-shadow: none;
 }
 .cy-nav button {
   width: 32px;
   height: 32px;
   padding: 0;
-  border: 0;
-  border-radius: 6px;
-  background: var(--bg-alt);
-  color: var(--text);
+  border: 1px solid #777;
+  border-radius: 2px;
+  background: #fff;
+  color: #222;
   font-size: 1.05rem;
   line-height: 1;
   cursor: pointer;
 }
-.cy-nav button:hover { background: var(--accent-soft); border: 0; }
+.cy-nav button:hover { background: #f3f3f3; border: 1px solid #555; }
 .cy-tooltip {
   position: absolute;
   z-index: 3;
@@ -1081,8 +1262,8 @@ section h2 { font-size: 1.05rem; margin: 0 0 8px; }
   min-height: 560px;
 }
 .heatmap-wrap {
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: 1px solid #888;
+  border-radius: 0;
 }
 #heatmap {
   display: block;
@@ -1101,14 +1282,18 @@ section h2 { font-size: 1.05rem; margin: 0 0 8px; }
   border: 0;
   background: none;
   padding: 0;
-  color: var(--accent);
+  color: var(--link);
   font: inherit;
   font-size: inherit;
   cursor: pointer;
   text-align: left;
-  text-decoration: none;
+  text-decoration: underline;
 }
-.pathway-link:hover, .genes-view-btn:hover, .links-view-btn:hover { text-decoration: underline; background: none; }
+.pathway-link:hover, .genes-view-btn:hover, .links-view-btn:hover {
+  color: var(--link-hover);
+  text-decoration: underline;
+  background: none;
+}
 #graphNodeTable .genes-view-btn,
 #graphNodeTable .links-view-btn { white-space: nowrap; }
 
@@ -1129,8 +1314,8 @@ section h2 { font-size: 1.05rem; margin: 0 0 8px; }
   max-height: 360px;
   overflow: auto;
   margin: 10px 0 0;
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  border: 1px solid #888;
+  border-radius: 0;
   background: #fff;
 }
 .genes-dialog-list table {
@@ -1153,7 +1338,7 @@ section h2 { font-size: 1.05rem; margin: 0 0 8px; }
   font-weight: 600;
 }
 .genes-dialog-list tr:last-child td { border-bottom: 0; }
-.genes-dialog-list tr.is-interest td { background: #f5ebe0; font-weight: 650; }
+.genes-dialog-list tr.is-interest td { background: #f5ebe0; font-weight: 700; }
 .genes-dialog-empty { color: var(--muted); padding: 12px; }
 
 .node-info .text-btn { margin-left: 8px; }
@@ -1167,8 +1352,8 @@ footer {
 }
 
 dialog {
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  border: 1px solid #888;
+  border-radius: 0;
   padding: 20px 22px;
   width: min(480px, calc(100vw - 32px));
   color: var(--text);
@@ -1217,15 +1402,15 @@ dialog button { margin-top: 8px; }
   width: 100%;
   min-height: 110px;
   padding: 6px 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  border: 1px solid #777;
+  border-radius: 0;
   font: inherit;
   font-size: 0.95rem;
   resize: vertical;
 }
 #fromGenesList:focus {
-  outline: 2px solid var(--focus);
-  border-color: var(--accent);
+  outline: 1px solid #555;
+  border-color: #555;
 }
 .from-genes-cutoff {
   display: flex;
@@ -1238,16 +1423,16 @@ dialog button { margin-top: 8px; }
 .from-genes-cutoff input {
   width: 5.5rem;
   padding: 4px 6px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  border: 1px solid #777;
+  border-radius: 0;
   font: inherit;
 }
 #fromGenesDialog .bulk-lookup-toolbar .text-btn { margin-top: 0; }
 .from-genes-table-wrap {
   max-height: 320px;
   overflow: auto;
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  border: 1px solid #888;
+  border-radius: 0;
   background: #fff;
 }
 #fromGenesTable {
@@ -1358,20 +1543,21 @@ dialog button { margin-top: 8px; }
 
 .docs {
   max-width: 42em;
-  margin: 0 auto;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 22px 26px 32px;
+  margin: 0;
+  background: #fff;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
 }
 .docs h1 {
-  margin: 0 0 14px;
-  font-size: 1.45rem;
-  font-weight: 650;
+  margin: 0 0 10px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #000;
 }
 .docs h2 {
-  margin: 22px 0 8px;
-  font-size: 1.05rem;
+  margin: 16px 0 6px;
+  font-size: 14px;
 }
 .docs p, .docs li { line-height: 1.55; }
 .docs p { margin: 0 0 12px; }
@@ -1401,15 +1587,15 @@ dialog button { margin-top: 8px; }
   vertical-align: top;
 }
 .docs th { color: var(--muted); font-weight: 600; width: 11em; }
-.docs a { color: var(--accent); }
-.header-links a[aria-current="page"] { text-decoration: underline; }
+.docs a { color: var(--link); }
+.docs a:hover { color: var(--link-hover); }
+.header-links a[aria-current="page"] { color: #fff; text-decoration: underline; }
 
 @media (max-width: 800px) {
-  .header-row, .page { padding-left: 16px; padding-right: 16px; }
+  .header-row, .page { padding-left: 8px; padding-right: 8px; }
   main { grid-template-columns: 1fr; }
-  #workspace { padding: 16px; }
+  #workspace { padding: 8px; }
   #landing { padding-top: 12px; }
-  .tab-list.landing-tab-list { grid-template-columns: 1fr; }
   .toolbar-tissue, .toolbar-seeds, .toolbar-collection { max-width: none; flex: 1 1 100%; }
   .toolbar-compare { padding-bottom: 0; }
   .toolbar-actions { margin-left: 0; flex: 1 0 100%; justify-content: flex-end; }

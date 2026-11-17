@@ -25,3 +25,7 @@ output/
 gene_membership.json
 
 .Rhistory
+
+huggingface-cache/
+deck/
+explore-site/webtool_github_repository_standard.md
